@@ -1,25 +1,97 @@
-name: Verify Lean formalization
+name: JSP000622 isolated toolchain bootstrap
 on:
   push:
-  pull_request:
+    branches: [work/jsp000622-z20-verification]
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
-  verify:
+  bootstrap:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 35
     steps:
-      - uses: actions/checkout@v4
-      - uses: leanprover/lean-action@50fcf42d2e460296f1a34b402e990d1b24f8b596 # v1
+      - name: Fetch pinned official Lean release and record provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/meta
+          url=https://github.com/leanprover/lean4/releases/download/v4.33.0/lean-4.33.0-linux.tar.zst
+          curl --fail --location --retry 3 "$url" -o lean.tar.zst
+          sha256sum lean.tar.zst | tee artifacts/meta/toolchain.sha256
+          printf '%s\n' "$url" > artifacts/meta/source-url.txt
+          curl --fail --location --retry 3 https://api.github.com/repos/leanprover/lean4/releases/tags/v4.33.0 -o artifacts/meta/release.json
+          python3 - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          release = json.loads(Path('artifacts/meta/release.json').read_text())
+          asset = next(a for a in release['assets'] if a['name'] == 'lean-4.33.0-linux.tar.zst')
+          actual = hashlib.file_digest(open('lean.tar.zst', 'rb'), 'sha256').hexdigest()
+          expected = asset.get('digest')
+          if expected:
+              assert expected == 'sha256:' + actual, (expected, actual)
+          Path('artifacts/meta/provenance.json').write_text(json.dumps({'asset': asset, 'actual_sha256': actual, 'release_digest_matched': bool(expected)}, indent=2))
+          PY
+          tar --zstd -xf lean.tar.zst
+          ./lean-4.33.0-linux/bin/lean --version | tee artifacts/meta/lean-version.txt
+          split -b 400M -d -a 2 lean.tar.zst lean-part-
+          for f in lean-part-*; do mkdir -p "artifacts/$f"; mv "$f" "artifacts/$f/"; done
+          printf '%s\n' 'This run bootstraps an official compiler only. It does not verify z(20)=6 or claim an award.' > artifacts/meta/SCOPE.txt
+      - name: Fetch precisely pinned upstream z20-related sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          git init upstream
+          git -C upstream remote add origin https://github.com/plby/lean-proofs.git
+          git -C upstream config core.sparseCheckout true
+          cat > upstream/.git/info/sparse-checkout <<'EOF'
+          /README.md
+          /LICENSE
+          /sources.yaml
+          /src/latest/lean-toolchain
+          /src/latest/lakefile.toml
+          /src/latest/lakefile.lean
+          /src/latest/lake-manifest.json
+          /src/latest/ErdosProblems/Erdos758.lean
+          /src/latest/ErdosProblems/Erdos758/
+          /src/latest/Util/
+          EOF
+          git -C upstream -c protocol.version=2 fetch --depth 1 --filter=blob:none origin 8822f7ddef30fadbd92e1c6ab4ed897af356af5e
+          git -C upstream checkout --detach FETCH_HEAD
+          git -C upstream rev-parse HEAD | tee artifacts/meta/upstream-commit.txt
+          mkdir -p artifacts/upstream
+          tar --zstd --exclude=.git -cf artifacts/upstream/upstream-sources.tar.zst upstream
+          sha256sum artifacts/upstream/upstream-sources.tar.zst >> artifacts/meta/toolchain.sha256
+      - uses: actions/upload-artifact@v4
         with:
-          build: "false"
-          test: "false"
-      - name: Build and check proof, statements and axioms
-        run: bash run.sh verification-ci.log
-      - name: Retain verification log
+          name: z20-lean-part-00
+          path: artifacts/lean-part-00
+          compression-level: 0
+          retention-days: 30
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: z20-lean-part-01
+          path: artifacts/lean-part-01
+          compression-level: 0
+          retention-days: 30
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v4
+        with:
+          name: z20-lean-part-02
+          path: artifacts/lean-part-02
+          compression-level: 0
+          retention-days: 30
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v4
+        with:
+          name: z20-upstream-sources
+          path: artifacts/upstream
+          compression-level: 0
+          retention-days: 30
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
         if: always()
-        uses: actions/upload-artifact@v4
         with:
-          name: verification-log
-          path: verification-ci.log
+          name: z20-bootstrap-provenance
+          path: artifacts/meta
+          retention-days: 30
