@@ -1,97 +1,111 @@
-name: JSP000622 isolated toolchain bootstrap
+name: JSP000622 isolated Lean verification
 on:
   push:
     branches: [work/jsp000622-z20-verification]
+    paths: ['.github/workflows/lean.yml', 'Z20/run.sh']
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: jsp000622-verification
+  cancel-in-progress: false
 jobs:
-  bootstrap:
+  verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 90
     steps:
-      - name: Fetch pinned official Lean release and record provenance
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/cache@v4
+        with:
+          path: .z20
+          key: z20-lean4330-upstream8822f7d-foundation-v1
+      - name: Prepare independently pinned proof workspace
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p artifacts/meta
-          url=https://github.com/leanprover/lean4/releases/download/v4.33.0/lean-4.33.0-linux.tar.zst
-          curl --fail --location --retry 3 "$url" -o lean.tar.zst
-          sha256sum lean.tar.zst | tee artifacts/meta/toolchain.sha256
-          printf '%s\n' "$url" > artifacts/meta/source-url.txt
-          curl --fail --location --retry 3 https://api.github.com/repos/leanprover/lean4/releases/tags/v4.33.0 -o artifacts/meta/release.json
+          mkdir -p .z20 logs
+          if [ ! -x .z20/lean/bin/lean ]; then
+            curl --fail --location --retry 3 https://github.com/leanprover/lean4/releases/download/v4.33.0/lean-4.33.0-linux.tar.zst -o .z20/lean.tar.zst
+            sha256sum .z20/lean.tar.zst | tee logs/lean-release.sha256
+            tar --zstd -xf .z20/lean.tar.zst -C .z20
+            mv .z20/lean-4.33.0-linux .z20/lean
+            rm .z20/lean.tar.zst
+          fi
+          echo "$GITHUB_WORKSPACE/.z20/lean/bin" >> "$GITHUB_PATH"
+          export PATH="$GITHUB_WORKSPACE/.z20/lean/bin:$PATH"
+          lean --version | tee logs/lean-version.txt
+          if [ ! -f .z20/upstream/src/latest/ErdosProblems/Erdos758.lean ]; then
+            git init .z20/upstream
+            git -C .z20/upstream remote add origin https://github.com/plby/lean-proofs.git
+            git -C .z20/upstream config core.sparseCheckout true
+            printf '%s\n' /README.md /LICENSE /sources.yaml /src/latest/lean-toolchain /src/latest/lake-manifest.json /src/latest/ErdosProblems/Erdos758.lean /src/latest/ErdosProblems/Erdos758/ /src/latest/Util/ > .z20/upstream/.git/info/sparse-checkout
+            git -C .z20/upstream fetch --depth 1 --filter=blob:none origin 8822f7ddef30fadbd92e1c6ab4ed897af356af5e
+            git -C .z20/upstream checkout --detach FETCH_HEAD
+          fi
+          mkdir -p .z20/project/ErdosProblems
+          cp -a .z20/upstream/src/latest/ErdosProblems/Erdos758.lean .z20/project/ErdosProblems/
+          cp -a .z20/upstream/src/latest/ErdosProblems/Erdos758 .z20/project/ErdosProblems/
+          cp -a .z20/upstream/src/latest/Util .z20/project/
+          cp .z20/upstream/src/latest/lean-toolchain .z20/project/
           python3 - <<'PY'
-          import hashlib, json
+          import json
           from pathlib import Path
-          release = json.loads(Path('artifacts/meta/release.json').read_text())
-          asset = next(a for a in release['assets'] if a['name'] == 'lean-4.33.0-linux.tar.zst')
-          actual = hashlib.file_digest(open('lean.tar.zst', 'rb'), 'sha256').hexdigest()
-          expected = asset.get('digest')
-          if expected:
-              assert expected == 'sha256:' + actual, (expected, actual)
-          Path('artifacts/meta/provenance.json').write_text(json.dumps({'asset': asset, 'actual_sha256': actual, 'release_digest_matched': bool(expected)}, indent=2))
+          m = json.loads(Path('.z20/upstream/src/latest/lake-manifest.json').read_text())
+          pin = next(p['rev'] for p in m['packages'] if p['name'] == 'mathlib')
+          Path('logs/mathlib-pin.txt').write_text(pin+'\n')
+          config = '''name = "jsp000622"
+          version = "0.1.0"
+          [[require]]
+          name = "mathlib"
+          git = "https://github.com/leanprover-community/mathlib4.git"
+          rev = "%s"
+          [[lean_lib]]
+          name = "ErdosProblems"
+          [[lean_lib]]
+          name = "Util"
+          [[lean_lib]]
+          name = "JSP000622"
+          ''' % pin
+          Path('.z20/project/lakefile.toml').write_text(config)
           PY
-          tar --zstd -xf lean.tar.zst
-          ./lean-4.33.0-linux/bin/lean --version | tee artifacts/meta/lean-version.txt
-          split -b 400M -d -a 2 lean.tar.zst lean-part-
-          for f in lean-part-*; do mkdir -p "artifacts/$f"; mv "$f" "artifacts/$f/"; done
-          printf '%s\n' 'This run bootstraps an official compiler only. It does not verify z(20)=6 or claim an award.' > artifacts/meta/SCOPE.txt
-      - name: Fetch precisely pinned upstream z20-related sources
+          cd .z20/project
+          lake update 2>&1 | tee ../../logs/lake-update.txt
+          lake exe cache get 2>&1 | tee ../../logs/mathlib-cache.txt
+      - name: Kernel-check upstream small-value theorem and audit its axioms
         shell: bash
         run: |
           set -euo pipefail
-          git init upstream
-          git -C upstream remote add origin https://github.com/plby/lean-proofs.git
-          git -C upstream config core.sparseCheckout true
-          cat > upstream/.git/info/sparse-checkout <<'EOF'
-          /README.md
-          /LICENSE
-          /sources.yaml
-          /src/latest/lean-toolchain
-          /src/latest/lakefile.toml
-          /src/latest/lakefile.lean
-          /src/latest/lake-manifest.json
-          /src/latest/ErdosProblems/Erdos758.lean
-          /src/latest/ErdosProblems/Erdos758/
-          /src/latest/Util/
+          cd .z20/project
+          lake build ErdosProblems.Erdos758.SmallValues 2>&1 | tee ../../logs/upstream-build.txt
+          cat > FoundationAudit.lean <<'EOF'
+          import ErdosProblems.Erdos758.SmallValues
+          #print axioms Erdos758.small_values_exact
+          #print axioms Erdos758.small_values_sequence
+          #check Erdos758.z
+          #check Erdos758.z_le
+          #check Erdos758.uniformBound_mono_vertices
+          theorem smoke_bv (x : BitVec 8) : x &&& 0 = 0 := by bv_decide
+          #print axioms smoke_bv
+          #check finSumFinEquiv
+          #check Equiv.sumCongr
+          #check SimpleGraph.Iso
           EOF
-          git -C upstream -c protocol.version=2 fetch --depth 1 --filter=blob:none origin 8822f7ddef30fadbd92e1c6ab4ed897af356af5e
-          git -C upstream checkout --detach FETCH_HEAD
-          git -C upstream rev-parse HEAD | tee artifacts/meta/upstream-commit.txt
-          mkdir -p artifacts/upstream
-          tar --zstd --exclude=.git -cf artifacts/upstream/upstream-sources.tar.zst upstream
-          sha256sum artifacts/upstream/upstream-sources.tar.zst >> artifacts/meta/toolchain.sha256
-      - uses: actions/upload-artifact@v4
-        with:
-          name: z20-lean-part-00
-          path: artifacts/lean-part-00
-          compression-level: 0
-          retention-days: 30
-          if-no-files-found: error
-      - uses: actions/upload-artifact@v4
-        with:
-          name: z20-lean-part-01
-          path: artifacts/lean-part-01
-          compression-level: 0
-          retention-days: 30
-          if-no-files-found: warn
-      - uses: actions/upload-artifact@v4
-        with:
-          name: z20-lean-part-02
-          path: artifacts/lean-part-02
-          compression-level: 0
-          retention-days: 30
-          if-no-files-found: warn
-      - uses: actions/upload-artifact@v4
-        with:
-          name: z20-upstream-sources
-          path: artifacts/upstream
-          compression-level: 0
-          retention-days: 30
-          if-no-files-found: error
-      - uses: actions/upload-artifact@v4
+          lake env lean FoundationAudit.lean 2>&1 | tee ../../logs/foundation-audit.txt
+      - name: Run the current z20 proof iteration when present
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f Z20/run.sh ]; then
+            bash Z20/run.sh "$GITHUB_WORKSPACE/.z20/project" "$GITHUB_WORKSPACE/logs" 2>&1 | tee logs/z20-iteration.txt
+          else
+            echo 'Foundation-only iteration: z(20)=6 is not yet claimed.' | tee logs/z20-iteration.txt
+          fi
+      - name: Retain exact verification logs
         if: always()
+        uses: actions/upload-artifact@v4
         with:
-          name: z20-bootstrap-provenance
-          path: artifacts/meta
+          name: z20-verification-logs-${{ github.run_id }}
+          path: logs
           retention-days: 30
