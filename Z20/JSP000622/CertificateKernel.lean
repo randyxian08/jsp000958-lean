@@ -2,9 +2,9 @@
 Copyright (c) 2026. Released under Apache-2.0.
 A semantic bridge from kernel-checked LRAT refutations to disjoint homogeneous sets.
 The external SAT solver, encoder, parser and certificate generator are not axioms.
-This module depends only on Mathlib, not on the twelve-vertex result.
 -/
-import Mathlib
+import Mathlib.Combinatorics.SimpleGraph.Clique
+import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.Sat.FromLRAT
 
 namespace JSP000622.Certificate
@@ -161,7 +161,7 @@ end JSP000622.Certificate
 
 open Lean Elab Term in
 /-- Reconstruct the original CNF proof without expanding it into a huge disjunction.
-The expected type still has to definitionally match the reconstructed formula. -/
+The expected type must definitionally match the reconstructed formula. -/
 elab "checked_from_lrat " cnf:term:max ppSpace lrat:term:max : term => do
   let c ← unsafe evalTerm String (mkConst ``String) cnf
   let p ← unsafe evalTerm String (mkConst ``String) lrat
