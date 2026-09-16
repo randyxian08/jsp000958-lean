@@ -1,0 +1,64 @@
+name: JSP000622 pinned auxiliary proof replay
+on:
+  push:
+    branches: [work/jsp000622-z20-verification]
+    paths: ['Z20/verify_foundation.sh']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  cases:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      max-parallel: 8
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/cache/restore@v4
+        with:
+          path: .z20
+          key: z20-runtime433-db584cd-v2
+          fail-on-cache-miss: true
+      - name: Reconstruct the pinned auxiliary sources
+        run: bash Z20/verify_foundation.sh prepare
+      - name: Check assigned kernel proof terms
+        run: bash Z20/verify_foundation.sh shard ${{ matrix.shard }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: z20-foundation-chunk-${{ matrix.shard }}-${{ github.run_id }}
+          path: foundation-output
+          retention-days: 30
+  join:
+    needs: cases
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/cache/restore@v4
+        with:
+          path: .z20
+          key: z20-runtime433-db584cd-v2
+          fail-on-cache-miss: true
+      - name: Reconstruct the exact sources again
+        run: bash Z20/verify_foundation.sh prepare
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: z20-foundation-chunk-*-${{ github.run_id }}
+          path: foundation-parts
+          merge-multiple: true
+      - name: Join checked modules, verify theorems and audit axioms
+        run: bash Z20/verify_foundation.sh join
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: z20-foundation-joined-${{ github.run_id }}
+          path: foundation-output
+          retention-days: 30
