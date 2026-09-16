@@ -2,6 +2,7 @@
 set -euo pipefail
 root="$(pwd)"
 export PATH="$root/.z20/lean/bin:$PATH"
+export LEAN_NUM_THREADS=2
 project="$root/.z20/project"
 out="$root/foundation-output"
 mkdir -p "$out"
@@ -49,17 +50,21 @@ for weight,module in sorted(weighted,reverse=True):
 (out/f'targets-{shard}.txt').write_text('\n'.join(bins[shard])+'\n')
 PY
   cd "$project"
-  mapfile -t targets < "$out/targets-$shard.txt"
-  printf '%s\n' "${targets[@]}"
-  lake build "${targets[@]}" 2>&1 | tee "$out/build-$shard.txt"
+  while IFS= read -r target; do
+    printf '%s\n' "$target" | tee -a "$out/build-$shard.txt"
+    lake build "$target" 2>&1 | tee -a "$out/build-$shard.txt"
+  done < "$out/targets-$shard.txt"
   tar --zstd -cf "$out/chunk-$shard.tar.zst" .lake/build
   sha256sum "$out/chunk-$shard.tar.zst" > "$out/chunk-$shard.sha256"
   ;;
 join)
   cd "$project"
+  count=0
   for part in "$root"/foundation-parts/chunk-*.tar.zst; do
     tar --zstd -xf "$part"
+    count=$((count+1))
   done
+  test "$count" = 16
   lake build ErdosProblems.Erdos758.SmallValues 2>&1 | tee "$out/small-values-build.txt"
   cat > FoundationAudit.lean <<'EOF'
 import ErdosProblems.Erdos758.SmallValues
