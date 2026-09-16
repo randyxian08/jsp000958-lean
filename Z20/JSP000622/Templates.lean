@@ -44,7 +44,6 @@ def template20 (code : ℕ) : Symbols 20 := fun u v =>
   | .inl a, .inr b => .variable (16 * a.val + b.val)
   | .inr b, .inl a => .variable (16 * a.val + b.val)
 
-/-- A propositional valuation of the independently variable cross edges. -/
 def rowValuation {V : Type*} {m n : ℕ} (G : SimpleGraph V)
     (left : Fin m → V) (right : Fin n → V) : Sat.Valuation := fun t =>
   ∃ a : Fin m, ∃ b : Fin n, t = n * a.val + b.val ∧ G.Adj (left a) (right b)
@@ -79,7 +78,6 @@ theorem rowValuation_sixteen {V : Type*} {m : ℕ} (G : SimpleGraph V)
   · intro h
     exact ⟨a, b, rfl, h⟩
 
-/-- The symbolic sixteen-vertex template matches the actual graph block by block. -/
 theorem realizes_template16 (G : SimpleGraph (Fin 16)) (code7 code8 : ℕ)
     (hrootN : ∀ a : Fin 7, G.Adj root16 (near16 a))
     (hrootF : ∀ a : Fin 8, ¬G.Adj root16 (far16 a))
@@ -105,10 +103,9 @@ theorem realizes_template16 (G : SimpleGraph (Fin 16)) (code7 code8 : ℕ)
   · fin_cases b
     simpa [root16, far16, SimpleGraph.adj_comm] using hrootF a
   · rw [rowValuation_eight]
-    exact G.adj_comm
+    exact G.adj_comm (far16 a) (near16 b)
   · simpa [far16] using hfar a b
 
-/-- The symbolic twenty-vertex template matches the actual clique/core split. -/
 theorem realizes_template20 (G : SimpleGraph (Fin 20)) (code : ℕ)
     (hleft : ∀ a b : Fin 4, G.Adj (left20 a) (left20 b) ↔ a ≠ b)
     (hright : ∀ a b : Fin 16, G.Adj (right20 a) (right20 b) ↔ (codeGraph 16 code).Adj a b) :
@@ -121,7 +118,7 @@ theorem realizes_template20 (G : SimpleGraph (Fin 20)) (code : ℕ)
   · simpa [left20] using hleft a b
   · exact (rowValuation_sixteen G left20 right20 a b).symm
   · rw [rowValuation_sixteen]
-    exact G.adj_comm
+    exact G.adj_comm (right20 a) (left20 b)
   · simpa [right20] using hright a b
 
 #print axioms realizes_template16
