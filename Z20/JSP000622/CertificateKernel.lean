@@ -28,26 +28,26 @@ def Realizes {n : ℕ} (G : SimpleGraph (Fin n)) (s : Symbols n)
     (v : Sat.Valuation) : Prop :=
   ∀ a b, a ≠ b → (G.Adj a b ↔ Atom.eval v (s a b))
 
-def AllFalse (v : Sat.Valuation) (c : Sat.Clause) : Prop :=
+def AllFalse (v : Sat.Valuation) (c : List Sat.Literal) : Prop :=
   ∀ l ∈ c, v.neg l
 
 /-- A falsified clause forces a symbolic edge to the indicated Boolean value. -/
-def Forces (c : Sat.Clause) (a : Atom) (b : Bool) : Prop :=
+def Forces (c : List Sat.Literal) (a : Atom) (b : Bool) : Prop :=
   match a with
   | .fixed d => d = b
   | .variable i => (if b then Sat.Literal.neg i else Sat.Literal.pos i) ∈ c
 
-instance (c : Sat.Clause) (a : Atom) (b : Bool) : Decidable (Forces c a b) := by
+instance (c : List Sat.Literal) (a : Atom) (b : Bool) : Decidable (Forces c a b) := by
   cases a <;> unfold Forces <;> infer_instance
 
-theorem forces_sound {v : Sat.Valuation} {c : Sat.Clause} {a : Atom} {b : Bool}
+theorem forces_sound {v : Sat.Valuation} {c : List Sat.Literal} {a : Atom} {b : Bool}
     (hf : AllFalse v c) (h : Forces c a b) : (a.eval v ↔ b = true) := by
   cases a with
   | fixed d =>
     change d = b at h
     subst d
     rfl
-  | variable i =>
+  | «variable» i =>
     cases b with
     | false =>
       have hn : ¬v i := hf (.pos i) h
@@ -57,12 +57,12 @@ theorem forces_sound {v : Sat.Valuation} {c : Sat.Clause} {a : Atom} {b : Bool}
       simpa [Atom.eval] using hp
 
 /-- This is the ordinary propositional meaning of a CNF clause. -/
-theorem satisfies_of_not_allFalse (v : Sat.Valuation) (c : Sat.Clause) :
+theorem satisfies_of_not_allFalse (v : Sat.Valuation) (c : List Sat.Literal) :
     (AllFalse v c → False) → v.satisfies c := by
   induction c with
   | nil =>
     intro h
-    exact h (fun l hl => (List.not_mem_nil l hl).elim)
+    exact h (fun _ hl => (List.not_mem_nil hl).elim)
   | cons l cs ih =>
     intro h hl
     apply ih
@@ -93,7 +93,7 @@ theorem Four.card_vertices {n : ℕ} (q : Four n) (h : Function.Injective q) :
   simp
 
 structure PairRule (n : ℕ) where
-  clause : Sat.Clause
+  clause : List Sat.Literal
   first : Four n
   second : Four n
   firstColor : Bool
@@ -111,7 +111,7 @@ instance {n : ℕ} (s : Symbols n) (r : PairRule n) : Decidable (r.Valid s) := b
 
 theorem homogeneous_of_forced_four {n : ℕ} (G : SimpleGraph (Fin n))
     (s : Symbols n) (v : Sat.Valuation) (hr : Realizes G s v)
-    (c : Sat.Clause) (hf : AllFalse v c) (q : Four n) (b : Bool)
+    (c : List Sat.Literal) (hf : AllFalse v c) (q : Four n) (b : Bool)
     (h : ∀ i j : Fin 4, i ≠ j → Forces c (s (q i) (q j)) b) :
     Homogeneous G q.vertices := by
   have he : ∀ u ∈ q.vertices, ∀ w ∈ q.vertices, u ≠ w → (G.Adj u w ↔ b = true) := by
@@ -143,7 +143,7 @@ theorem PairRule.sound {n : ℕ} (G : SimpleGraph (Fin n)) (s : Symbols n)
 /-- A genuine graph theorem follows from valid clause witnesses and an LRAT proof. -/
 theorem twoFours_of_refutation {n : ℕ} (s : Symbols n) (rules : List (PairRule n))
     (valid : ∀ r ∈ rules, r.Valid s)
-    (unsat : (rules.map PairRule.clause).proof [])
+    (unsat : Sat.Fmla.proof (rules.map PairRule.clause) [])
     (G : SimpleGraph (Fin n)) (v : Sat.Valuation) (hr : Realizes G s v) : TwoFours G := by
   classical
   by_contra hn
