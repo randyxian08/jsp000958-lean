@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 root="$(pwd)"
-mode="${1:?generate, kernel, or replay}"
+mode="${1:?generate, kernel, replay, or join}"
 out="$root/classification-output"
 mkdir -p "$out"
 export LEAN_NUM_THREADS=2
@@ -13,7 +13,15 @@ generate)
   g++ -O2 -std=c++17 -Wall -Wextra Z20/rup_to_lrat.cpp -o "$out/rup_to_lrat"
   mkdir -p "$out/project/JSP000622" "$out/logs"
   cp -a Z20/JSP000622/. "$out/project/JSP000622/"
-  .classification-venv/bin/python Z20/generate_classification.py "$out/project" "$out/logs" "$out/rup_to_lrat" 2>&1 | tee "$out/generation.txt"
+  .classification-venv/bin/python Z20/generate_classification_v2.py "$out/project" "$out/logs" "$out/rup_to_lrat" 2>&1 | tee "$out/generation.txt"
+  python3 - "$out/project" <<'PY'
+from pathlib import Path
+import sys
+for p in (Path(sys.argv[1])/'JSP000622').rglob('Data.lean'):
+    t=p.read_text()
+    if '![' in t and 'import Mathlib.Data.Fin.VecNotation' not in t:
+        p.write_text('import Mathlib.Data.Fin.VecNotation\n'+t)
+PY
   cp -a Z20 "$out/source"
   ;;
 kernel)
@@ -22,11 +30,13 @@ kernel)
   mkdir -p "$project/JSP000622"
   cp -a Z20/JSP000622/. "$project/JSP000622/"
   cd "$project"
-  lake build JSP000622.ClassificationKernel 2>&1 | tee "$out/kernel-build.txt"
+  lake build JSP000622.ExtensionKernel 2>&1 | tee "$out/kernel-build.txt"
   cat > ClassKernelAudit.lean <<'EOF'
-import JSP000622.ClassificationKernel
+import JSP000622.ExtensionKernel
+#print axioms JSP000622.Certificate.twoFours_of_refutation
 #print axioms JSP000622.Certificate.classified_of_refutation
-#print JSP000622.Certificate.classified_of_refutation
+#print axioms JSP000622.Certificate.classified_step
+#print JSP000622.Certificate.classified_step
 EOF
   lake env lean ClassKernelAudit.lean 2>&1 | tee "$out/kernel-audit.txt"
   if grep -E 'sorryAx|Lean.ofReduceBool|Lean.trustCompiler' "$out/kernel-audit.txt"; then exit 1; fi
@@ -36,17 +46,18 @@ replay)
   shard="${2:?shard number}"
   project="$root/.z20/project"
   cp -a classification-data/project/JSP000622 "$project/"
+  cp -a Z20/JSP000622/. "$project/JSP000622/"
   python3 - "$shard" "$out" <<'PY'
 import json, sys
 from pathlib import Path
 shard, out = int(sys.argv[1]), Path(sys.argv[2])
 report=json.loads(Path('classification-data/logs/classification-generation.json').read_text())
 names=[x['name'] for x in report['cases']]
-assert len(names)==29
+assert report['version']==2 and len(names)==76
 (out/f'targets-{shard}.txt').write_text('\n'.join(names[shard::6])+'\n')
 PY
   cd "$project"
-  lake build JSP000622.ClassificationKernel 2>&1 | tee "$out/replay-$shard.txt"
+  lake build JSP000622.ExtensionKernel 2>&1 | tee "$out/replay-$shard.txt"
   while IFS= read -r name; do
     path="JSP000622/${name//./\/}"
     lake build "JSP000622.$name.Data" 2>&1 | tee -a "$out/replay-$shard.txt"
@@ -64,14 +75,42 @@ out, shard=Path(sys.argv[1]),sys.argv[2]
 names=(out/f'checked-{shard}.txt').read_text().splitlines()
 t=''.join(f'import JSP000622.{name}\n' for name in names)
 t+=''.join(f'#print axioms JSP000622.{name}.classify\n' for name in names)
-for name in names:
-    if name in ('R34Seven','R34Eight'): t+=f'#print axioms JSP000622.{name}.complete\n'
 Path('ClassificationAudit.lean').write_text(t)
 PY
   lake env lean ClassificationAudit.lean 2>&1 | tee "$out/audit-$shard.txt"
   if grep -E 'sorryAx|Lean.ofReduceBool|Lean.trustCompiler' "$out/audit-$shard.txt"; then exit 1; fi
   tar --zstd -cf "$out/checked-classification-$shard.tar.zst" .lake/build
   sha256sum "$out/checked-classification-$shard.tar.zst" > "$out/checked-classification-$shard.sha256"
+  ;;
+join)
+  export PATH="$root/.z20/lean/bin:$PATH"
+  project="$root/.z20/project"
+  cp -a classification-data/project/JSP000622 "$project/"
+  cp -a Z20/JSP000622/. "$project/JSP000622/"
+  cd "$project"
+  count=0
+  for p in "$root"/classification-parts/checked-classification-*.tar.zst; do
+    tar --zstd -xf "$p"
+    count=$((count+1))
+  done
+  test "$count" = 6
+  lake build JSP000622.R34Nine 2>&1 | tee "$out/join-build.txt"
+  lake build JSP000622.R34Seven JSP000622.R34Eight 2>&1 | tee -a "$out/join-build.txt"
+  cat > CompleteCatalogAudit.lean <<'EOF'
+import JSP000622.R34Seven
+import JSP000622.R34Eight
+import JSP000622.R34Nine
+#print axioms JSP000622.R34Seven.complete
+#print axioms JSP000622.R34Eight.complete
+#print axioms JSP000622.R34Nine.complete
+#print JSP000622.R34Nine.complete
+EOF
+  lake env lean CompleteCatalogAudit.lean 2>&1 | tee "$out/complete-catalog-audit.txt"
+  if grep -E 'sorryAx|Lean.ofReduceBool|Lean.trustCompiler' "$out/complete-catalog-audit.txt"; then exit 1; fi
+  tar --zstd -cf "$out/checked-classification-full.tar.zst" .lake/build
+  sha256sum "$out/checked-classification-full.tar.zst" > "$out/checked-classification-full.sha256"
+  cp -a JSP000622 "$out/"
+  printf '%s\n' 'Complete small catalogs and all 27 normalized sixteen-vertex cases checked. The universal sixteen-vertex normalization and z(20) theorem are separate obligations.' > "$out/SCOPE.txt"
   ;;
 *) exit 2 ;;
 esac
