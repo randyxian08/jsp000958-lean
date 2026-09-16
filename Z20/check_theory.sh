@@ -6,6 +6,9 @@ export LEAN_NUM_THREADS=2
 mkdir -p theory-output .z20/project/JSP000622
 cp -a classification-data/project/JSP000622/. .z20/project/JSP000622/
 cp -a Z20/JSP000622/. .z20/project/JSP000622/
+python3 -m venv .theory-venv
+.theory-venv/bin/pip install networkx==3.4.2 python-sat==1.8.dev24
+.theory-venv/bin/python Z20/generate_bridges.py .z20/project classification-data/logs/classification-generation.json | tee theory-output/finite-bridge-generation.txt
 python3 - "$root" <<'PY'
 import json, os, signal, subprocess, sys, time
 from pathlib import Path
@@ -17,6 +20,10 @@ checks=[
  ('JSP000622.ExtensionKernel',['JSP000622.Certificate.classified_step']),
  ('JSP000622.Templates',['JSP000622.Certificate.realizes_template16','JSP000622.Certificate.realizes_template20']),
  ('JSP000622.RamseyAux',['JSP000622.Certificate.degree_seven_or_eight','JSP000622.Certificate.exists_homogeneous_four_twenty']),
+ ('JSP000622.Charts',['JSP000622.Certificate.sumElim_injective','JSP000622.Certificate.chartPerm_apply_index']),
+ ('JSP000622.NormalizeSixteen',['JSP000622.Certificate.classify_sixteen']),
+ ('JSP000622.NormalizeTwenty',['JSP000622.Certificate.packing_twenty_of_evidence']),
+ ('JSP000622.FiniteData',['JSP000622.FiniteData.complement_closed']),
  ('JSP000622.R34Steps.Level0Case0',['JSP000622.R34Steps.Level0Case0.classify']),
  ('JSP000622.R34Steps.Level3Case0',['JSP000622.R34Steps.Level3Case0.classify']),
 ]
@@ -44,5 +51,8 @@ for module,theorems in checks:
             except ValueError as e: result['audit_error']=str(e)
     results.append(result)
     (out/'results.json').write_text(json.dumps({'source_commit':os.environ['GITHUB_SHA'],'checks':results},indent=2))
+import shutil
+shutil.copytree(project/'JSP000622',out/'JSP000622',dirs_exist_ok=True)
+subprocess.run(['tar','--zstd','-cf',str(out/'theory-build.tar.zst'),'.lake/build'],cwd=project,check=True)
 if any(x['returncode'] or 'audit_error' in x for x in results): raise SystemExit(1)
 PY
