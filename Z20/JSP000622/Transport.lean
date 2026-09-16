@@ -4,12 +4,10 @@ namespace JSP000622.Certificate
 
 open SimpleGraph
 
-/-- Relabelling a graph by an equivalence gives a graph isomorphism. -/
 def comapIso {V W : Type*} (G : SimpleGraph W) (e : V ≃ W) : G.comap e ≃g G where
   toEquiv := e
   map_rel_iff' := by intro a b; rfl
 
-/-- Clique obstructions pass to every injectively induced graph. -/
 theorem cliqueFree_comap {V W : Type*} (G : SimpleGraph W) (f : V ↪ W)
     {k : ℕ} (h : G.CliqueFree k) : (G.comap f).CliqueFree k := by
   classical
@@ -21,7 +19,6 @@ theorem cliqueFree_comap {V W : Type*} (G : SimpleGraph W) (f : V ↪ W)
   obtain ⟨b, hb, rfl⟩ := Finset.mem_map.mp hv
   exact hS.isClique ha hb (fun he => huv (congrArg f he))
 
-/-- Independent-set obstructions pass to every injectively induced graph. -/
 theorem indepSetFree_comap {V W : Type*} (G : SimpleGraph W) (f : V ↪ W)
     {k : ℕ} (h : G.IndepSetFree k) : (G.comap f).IndepSetFree k := by
   classical
@@ -41,7 +38,6 @@ theorem ramseyFree_comap {V W : Type*} (G : SimpleGraph W) (f : V ↪ W)
     (G.comap f).CliqueFree k ∧ (G.comap f).IndepSetFree l :=
   ⟨cliqueFree_comap G f h.1, indepSetFree_comap G f h.2⟩
 
-/-- The complement exchanges the two Ramsey obstruction parameters. -/
 theorem ramseyFree_compl {V : Type*} (G : SimpleGraph V) {k l : ℕ}
     (h : G.CliqueFree k ∧ G.IndepSetFree l) :
     Gᶜ.CliqueFree l ∧ Gᶜ.IndepSetFree k := by
@@ -49,7 +45,6 @@ theorem ramseyFree_compl {V : Type*} (G : SimpleGraph V) {k l : ℕ}
   · simpa only [SimpleGraph.cliqueFree_compl] using h.2
   · simpa only [SimpleGraph.indepSetFree_compl] using h.1
 
-/-- A homogeneous set remains homogeneous in the complementary graph. -/
 theorem Homogeneous.compl {V : Type*} {G : SimpleGraph V} {S : Finset V}
     (h : Homogeneous G S) : Homogeneous Gᶜ S := by
   rcases h with hc | hi
@@ -65,15 +60,29 @@ theorem TwoFours.compl {V : Type*} {G : SimpleGraph V} (h : TwoFours G) :
   obtain ⟨S, T, hS, hT, hd, hs, ht⟩ := h
   exact ⟨S, T, hS, hT, hd, hs.compl, ht.compl⟩
 
-/-- Complementation also preserves graph isomorphisms. -/
 def complIso {V W : Type*} {G : SimpleGraph V} {H : SimpleGraph W}
     (e : G ≃g H) : Gᶜ ≃g Hᶜ where
   toEquiv := e.toEquiv
   map_rel_iff' := by
     intro a b
-    simp only [SimpleGraph.compl_adj, e.map_adj_iff, e.injective.ne_iff]
+    change (e a ≠ e b ∧ ¬H.Adj (e a) (e b)) ↔ (a ≠ b ∧ ¬G.Adj a b)
+    simp only [e.map_adj_iff, e.injective.ne_iff]
 
-/-- An explicit isomorphism transports all six pieces of the packing assertion. -/
+/-- Homogeneity is transported through every injective induced-graph map. -/
+theorem Homogeneous.map_comap {V W : Type*} (G : SimpleGraph W) (f : V ↪ W)
+    {S : Finset V} (h : Homogeneous (G.comap f) S) : Homogeneous G (S.map f) := by
+  rcases h with hc | hi
+  · left
+    intro u hu v hv huv
+    obtain ⟨a, ha, rfl⟩ := Finset.mem_map.mp hu
+    obtain ⟨b, hb, rfl⟩ := Finset.mem_map.mp hv
+    exact hc a ha b hb (fun he => huv (congrArg f he))
+  · right
+    intro u hu v hv huv
+    obtain ⟨a, ha, rfl⟩ := Finset.mem_map.mp hu
+    obtain ⟨b, hb, rfl⟩ := Finset.mem_map.mp hv
+    exact hi a ha b hb (fun he => huv (congrArg f he))
+
 theorem TwoFours.map {V W : Type*} {G : SimpleGraph V} {H : SimpleGraph W}
     (e : G ≃g H) (h : TwoFours G) : TwoFours H := by
   classical
@@ -103,7 +112,6 @@ theorem TwoFours.map {V W : Type*} {G : SimpleGraph V} {H : SimpleGraph W}
   subst b
   exact Finset.disjoint_left.mp hd ha hb
 
-/-- A permutation of the old vertices, extended by fixing the new last vertex. -/
 def extendPerm {n : ℕ} (e : Equiv.Perm (Fin n)) : Equiv.Perm (Fin (n + 1)) where
   toFun := Fin.lastCases (Fin.last n) (fun a => (e a).castSucc)
   invFun := Fin.lastCases (Fin.last n) (fun a => (e.symm a).castSucc)
