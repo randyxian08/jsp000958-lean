@@ -15,7 +15,7 @@ def extensionSymbols (n code : ℕ) : Symbols (n + 1) := fun a b =>
 def extensionValuation {n : ℕ} (G : SimpleGraph (Fin (n + 1))) : Sat.Valuation :=
   fun i => if hi : i < n then G.Adj (Fin.castSucc ⟨i, hi⟩) (Fin.last n) else False
 
-/-- No graph-to-SAT encoding assumption is needed: an arbitrary extension realizes the symbols. -/
+/-- An arbitrary extension realizes the symbols, with no encoding assumption. -/
 theorem realizes_extension {n : ℕ} (G : SimpleGraph (Fin (n + 1))) (code : ℕ)
     (old : ∀ i j : Fin n, G.Adj i.castSucc j.castSucc ↔ (codeGraph n code).Adj i j) :
     Realizes G (extensionSymbols n code) (extensionValuation G) := by
@@ -42,11 +42,7 @@ theorem classified_zero (G : SimpleGraph (Fin 0)) : Classified G [0] := by
   exact Fin.elim0 a
 
 /-- Complete coverage at order n plus complete extension certificates gives coverage at n+1.
-
-This statement is about every labelled graph. Isomorphism search is only used to
-produce witnesses for the finite `step` input; no canonical-labelling algorithm
-is assumed correct.
--/
+This quantifies over every labelled graph; no canonical-labelling algorithm is trusted. -/
 theorem classified_step {n k l : ℕ} (oldCatalog newCatalog : List ℕ)
     (base : ∀ H : SimpleGraph (Fin n), H.CliqueFree k ∧ H.IndepSetFree l →
       Classified H oldCatalog)
@@ -57,7 +53,8 @@ theorem classified_step {n k l : ℕ} (oldCatalog newCatalog : List ℕ)
     Classified G newCatalog := by
   classical
   let inclusion : Fin n ↪ Fin (n + 1) :=
-    ⟨Fin.castSucc, fun _ _ he => Fin.ext (congrArg Fin.val he)⟩
+    ⟨Fin.castSucc, fun _ _ he => Fin.ext
+      (congrArg (fun x : Fin (n + 1) => x.val) he)⟩
   let oldG : SimpleGraph (Fin n) := G.comap inclusion
   have oldFree : oldG.CliqueFree k ∧ oldG.IndepSetFree l :=
     ramseyFree_comap G inclusion free
