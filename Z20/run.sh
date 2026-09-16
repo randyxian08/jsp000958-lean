@@ -1,44 +1,39 @@
 #!/usr/bin/env bash
 set -euo pipefail
+root="$(pwd)"
 project="$1"
-logs="$2"
-mkdir -p "$project/JSP000622" "$logs"
+out="$2"
+core="${3:?core number}"
+[[ "$core" = 0 || "$core" = 1 ]]
+export PATH="$root/.z20/lean/bin:$PATH"
+export LEAN_NUM_THREADS=2
+mkdir -p "$project/JSP000622" "$out/logs" "$out/project"
 cp -a Z20/JSP000622/. "$project/JSP000622/"
-python3 Z20/generate_core_certificates.py "$project" "$logs" 2>&1 | tee "$logs/core-generation.txt"
-python3 - "$project" <<'PY'
-from pathlib import Path
-import sys
-for p in (Path(sys.argv[1])/'JSP000622').glob('Core[01].lean'):
-    t = p.read_text()
-    t = t.replace('(rules.map PairRule.clause).proof []', 'Sat.Fmla.proof (rules.map PairRule.clause) []')
-    p.write_text(t)
-PY
+trap 'cp -a "$project/JSP000622" "$out/project/"; cp -a "$root/Z20" "$out/source"' EXIT
+python3 Z20/prepare_core_v2.py "$project" "$out/logs" 2>&1 | tee "$out/generation.txt"
 cd "$project"
-lake build JSP000622.CertificateKernel 2>&1 | tee "$logs/certificate-kernel.txt"
-cat > KernelAudit.lean <<'EOF'
-import JSP000622.CertificateKernel
-#print axioms JSP000622.Certificate.twoFours_of_refutation
-#check Finite.surjective_of_injective
-#check SimpleGraph.Iso
-#check SimpleGraph.isNClique_iff
-#check SimpleGraph.isNIndepSet_iff
-#check finSumFinEquiv
-#check Sat.Fmla.proof
+lean --version | tee "$out/lean-version.txt"
+git -C .lake/packages/mathlib rev-parse HEAD | tee "$out/mathlib-pin.txt"
+lake build JSP000622.CertificateKernel 2>&1 | tee "$out/kernel.txt"
+lake build "JSP000622.Core$core.Refutation" 2>&1 | tee "$out/refutation.txt"
+lake build "JSP000622.Core$core.Symbols" 2>&1 | tee "$out/symbols.txt"
+for chunk in JSP000622/Core"$core"/Chunk*.lean; do
+  target="${chunk%.lean}"; target="${target//\//.}"
+  lake build "$target" 2>&1 | tee -a "$out/clauses.txt"
+done
+lake build "JSP000622.Core$core.Rules" 2>&1 | tee "$out/rules.txt"
+lake build "JSP000622.Core$core" 2>&1 | tee "$out/graph-theorem.txt"
+cat > CoreAudit.lean <<EOF
+import JSP000622.Core$core
+#print axioms JSP000622.Core$core.refutation
+#print axioms JSP000622.Core$core.formula_eq
+#print axioms JSP000622.Core$core.packing
+#print JSP000622.Core$core.packing
 EOF
-lake env lean KernelAudit.lean > "$logs/kernel-audit.txt" 2>&1 || true
-cat "$logs/kernel-audit.txt"
-lake build JSP000622.Core0 JSP000622.Core1 2>&1 | tee "$logs/core-build.txt"
-cat > CoreAudit.lean <<'EOF'
-import JSP000622.Core0
-import JSP000622.Core1
-#print axioms JSP000622.Core0.packing
-#print axioms JSP000622.Core1.packing
-#print JSP000622.Core0.packing
-#print JSP000622.Core1.packing
-EOF
-lake env lean CoreAudit.lean 2>&1 | tee "$logs/core-audit.txt"
-if grep -E 'sorryAx|Lean.ofReduceBool|Lean.trustCompiler' "$logs/core-audit.txt"; then
-  echo 'Rejected: an inadmissible axiom was detected.' >&2
-  exit 1
-fi
-printf '%s\n' 'Scope: two fixed-core graph theorems only. Full z(20)=6 still requires universal reduction and twelve-vertex input.' | tee "$logs/SCOPE.txt"
+lake env lean CoreAudit.lean 2>&1 | tee "$out/axioms.txt"
+python3 "$root/Z20/audit_axioms.py" "$out/axioms.txt" \
+  "JSP000622.Core$core.refutation" "JSP000622.Core$core.formula_eq" "JSP000622.Core$core.packing" \
+  | tee "$out/axiom-audit.json"
+tar --zstd -cf "$out/checked-core-$core.tar.zst" .lake/build
+sha256sum "$out/checked-core-$core.tar.zst" > "$out/checked-core-$core.sha256"
+printf '%s\n' 'Verified scope: one fixed-core graph packing theorem. Universal twenty-vertex normalization remains a separate obligation.' > "$out/SCOPE.txt"
