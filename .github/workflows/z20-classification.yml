@@ -9,12 +9,12 @@ permissions:
 jobs:
   generate:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Generate candidates, complete blocking refutations and semantic witnesses
+      - name: Generate exhaustive vertex extensions and sixteen-vertex certificates
         run: bash Z20/run_classification.sh generate
       - uses: actions/upload-artifact@v4
         if: always()
@@ -34,7 +34,7 @@ jobs:
           path: .z20
           key: z20-runtime433-db584cd-v2
           fail-on-cache-miss: true
-      - name: Check the generic classification soundness theorem
+      - name: Check the graph-semantic soundness and completeness induction
         run: bash Z20/run_classification.sh kernel
       - uses: actions/upload-artifact@v4
         if: always()
@@ -45,10 +45,10 @@ jobs:
   replay:
     needs: [generate, kernel]
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
     strategy:
       fail-fast: false
-      max-parallel: 4
+      max-parallel: 6
       matrix:
         shard: [0, 1, 2, 3, 4, 5]
     steps:
@@ -70,5 +70,35 @@ jobs:
         if: always()
         with:
           name: z20-classification-replay-${{ matrix.shard }}-${{ github.run_id }}
+          path: classification-output
+          retention-days: 30
+  join:
+    needs: replay
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/cache/restore@v4
+        with:
+          path: .z20
+          key: z20-runtime433-db584cd-v2
+          fail-on-cache-miss: true
+      - uses: actions/download-artifact@v4
+        with:
+          name: z20-classification-data-${{ github.run_id }}
+          path: classification-data
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: z20-classification-replay-*-${{ github.run_id }}
+          path: classification-parts
+          merge-multiple: true
+      - name: Verify the complete catalog theorems rather than just individual cases
+        run: bash Z20/run_classification.sh join
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: z20-classification-joined-${{ github.run_id }}
           path: classification-output
           retention-days: 30
