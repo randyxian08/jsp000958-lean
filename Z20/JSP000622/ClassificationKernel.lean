@@ -10,12 +10,12 @@ def codeEdge (n code : ℕ) (u w : Fin n) : Bool :=
 /-- The dense upper-triangle bit code describes an actual simple graph. -/
 def codeGraph (n code : ℕ) : SimpleGraph (Fin n) where
   Adj u w := u ≠ w ∧ codeEdge n code u w = true
-  symm := by
+  symm := ⟨by
     intro u w h
-    exact ⟨Ne.symm h.1, by simpa [codeEdge, min_comm, max_comm] using h.2⟩
-  loopless := by
+    exact ⟨Ne.symm h.1, by simpa [codeEdge, min_comm, max_comm] using h.2⟩⟩
+  loopless := ⟨by
     intro u h
-    exact h.1 rfl
+    exact h.1 rfl⟩
 
 instance (n code : ℕ) : DecidableRel (codeGraph n code).Adj := fun u w =>
   inferInstanceAs (Decidable (u ≠ w ∧ codeEdge n code u w = true))
