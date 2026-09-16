@@ -1,0 +1,35 @@
+name: JSP000622 incremental proof checker
+on:
+  push:
+    branches: [work/jsp000622-z20-verification]
+    paths: ['Z20/live/start.txt']
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: jsp000622-incremental-checker
+  cancel-in-progress: false
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/cache/restore@v4
+        with:
+          path: .z20
+          key: z20-runtime433-db584cd-v2
+          fail-on-cache-miss: true
+      - name: Check explicit requests and record exact source commits
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 Z20/live/checker.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: z20-incremental-${{ github.run_id }}
+          path: live-output
+          retention-days: 30
