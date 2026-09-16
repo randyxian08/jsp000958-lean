@@ -1,4 +1,4 @@
-name: JSP000622 proof iteration
+name: JSP000622 two core certificates
 on:
   push:
     branches: [work/jsp000622-z20-verification]
@@ -7,37 +7,31 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: jsp000622-proof-iteration
-  cancel-in-progress: true
+  group: jsp000622-core-certificates
+  cancel-in-progress: false
 jobs:
-  verify:
+  core:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        core: [0, 1]
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
       - uses: actions/cache/restore@v4
-        id: runtime
         with:
           path: .z20
           key: z20-runtime433-db584cd-v2
-      - name: Prepare pinned runtime
-        run: bash Z20/bootstrap.sh
-      - uses: actions/cache/save@v4
-        if: steps.runtime.outputs.cache-hit != 'true'
-        with:
-          path: .z20
-          key: z20-runtime433-db584cd-v2
-      - name: Execute and audit this proof iteration
-        run: bash Z20/run.sh "$GITHUB_WORKSPACE/.z20/project" "$GITHUB_WORKSPACE/logs"
-      - name: Retain logs and exact generated proof sources
+          fail-on-cache-miss: true
+      - name: Reconstruct the exact SAT proof and semantic witnesses
+        run: bash Z20/run.sh "$GITHUB_WORKSPACE/.z20/project" "$GITHUB_WORKSPACE/core-output" ${{ matrix.core }}
+      - name: Retain logs, proof objects and their exact source
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: z20-iteration-${{ github.run_id }}
-          path: |
-            logs
-            .z20/project/JSP000622
-            Z20
+          name: z20-checked-core-${{ matrix.core }}-${{ github.run_id }}
+          path: core-output
           retention-days: 30
