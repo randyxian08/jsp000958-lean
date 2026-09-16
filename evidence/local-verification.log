@@ -1,0 +1,54 @@
+===== JSP-000936 / JSP-000937 / JSP-000958 verification =====
+date: 2026-09-16T14:48:42Z
+
+===== [1/6] toolchain =====
+Lean (version 4.27.0, arm64-apple-darwin24.6.0, commit db93fe1608548721853390a10cd40580fe7d22ae, Release)
+
+===== [2/6] mathlib cache =====
+Current branch: HEAD
+Using cache (Azure) from origin: leanprover-community/mathlib4
+No files to download
+Decompressing 7869 file(s)
+Unpacked in 7294 ms
+Completed successfully!
+
+===== [3/6] build the upstream proof (26k lines) =====
+Build completed successfully (2931 jobs).
+
+===== [4/6] upstream audits =====
+'Randy1153.randy1153_main' depends on axioms: [propext, Classical.choice, Quot.sound]
+Randy1153.NodeFamily (n : ℕ) : Type
+Randy1153.NodeFamily.card_nodeFinset {n : ℕ} (nodes : NodeFamily n) : nodes.nodeFinset.card = n
+Randy1153.lagrangeFundamental {n : ℕ} (nodes : NodeFamily n) (k : Fin n) (t : ℝ) : ℝ
+Randy1153.lagrangeBasis_eq_product {n : ℕ} (nodes : NodeFamily n) (k : Fin n) :
+  lagrangeBasis nodes k =
+    ∏ i ∈ Finset.univ.erase k,
+      (Polynomial.X - Polynomial.C (nodes.point i)) * Polynomial.C (nodes.point k - nodes.point i)⁻¹
+Randy1153.lagrangeBasis_eval {n : ℕ} (nodes : NodeFamily n) (k : Fin n) (t : ℝ) :
+  Polynomial.eval t (lagrangeBasis nodes k) = lagrangeFundamental nodes k t
+Randy1153.lebesgueFunction {n : ℕ} (nodes : NodeFamily n) (t : ℝ) : ℝ
+Randy1153.continuous_lebesgueFunction {n : ℕ} (nodes : NodeFamily n) : Continuous (lebesgueFunction nodes)
+Randy1153.exists_lebesgueOn_eq_and_ge {n : ℕ} (nodes : NodeFamily n) {a b : ℝ} (hab : a ≤ b) :
+  ∃ t ∈ Set.Icc a b,
+    lebesgueOn nodes a b = lebesgueFunction nodes t ∧
+      ∀ u ∈ Set.Icc a b, lebesgueFunction nodes u ≤ lebesgueFunction nodes t
+Randy1153.lt_lebesgueOn_iff {n : ℕ} (nodes : NodeFamily n) {a b c : ℝ} (hab : a ≤ b) :
+  c < lebesgueOn nodes a b ↔ ∃ t ∈ Set.Icc a b, c < lebesgueFunction nodes t
+Randy1153.NodeFamily.sorted {n : ℕ} (nodes : NodeFamily n) : OrderedNodes n
+Randy1153.NodeFamily.lebesgueFunction_sorted {n : ℕ} (nodes : NodeFamily n) (t : ℝ) :
+  lebesgueFunction nodes.sorted.toNodeFamily t = lebesgueFunction nodes t
+Randy1153.Target : Prop
+Randy1153.randy1153_main : Target
+'Randy1153.sourceMaximumTarget_iff_target' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Randy1153.statementAudit_final' depends on axioms: [propext, Classical.choice, Quot.sound]
+
+===== [5/6] JSP adapters =====
+'JSP000936.jsp_000936_canonical' depends on axioms: [propext, Classical.choice, Quot.sound]
+'JSP000937.jsp_000937_canonical' depends on axioms: [propext, Classical.choice, Quot.sound]
+'JSP000958.jsp_000958' depends on axioms: [propext, Classical.choice, Quot.sound]
+'JSP000958.jsp_000958_maximum' depends on axioms: [propext, Classical.choice, Quot.sound]
+
+===== [6/6] placeholder / axiom scan =====
+placeholder scan clean
+
+===== ALL PASSED =====

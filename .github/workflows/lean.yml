@@ -1,0 +1,25 @@
+name: Verify Lean formalization
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: leanprover/lean-action@50fcf42d2e460296f1a34b402e990d1b24f8b596 # v1
+        with:
+          build: "false"
+          test: "false"
+      - name: Build and check proof, statements and axioms
+        run: bash run.sh verification-ci.log
+      - name: Retain verification log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verification-log
+          path: verification-ci.log

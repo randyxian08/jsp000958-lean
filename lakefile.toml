@@ -1,0 +1,16 @@
+name = "randy1153"
+reservoir = false
+version = "1.0.0"
+defaultTargets = ["Randy1153"]
+
+[leanOptions]
+autoImplicit = false
+relaxedAutoImplicit = false
+
+[[require]]
+name = "mathlib"
+scope = "leanprover-community"
+rev = "v4.27.0"
+
+[[lean_lib]]
+name = "Randy1153"
