@@ -2,7 +2,7 @@
 JSP-000622: the target is z(20) = 6.
 This file reuses the pinned small-order formalization in plby/lean-proofs.
 It does not claim new authorship of those imported results.
-The last theorem in this file is explicitly conditional on the two-four-set theorem.
+The last theorem is explicitly conditional on the two-four-set theorem.
 -/
 import ErdosProblems.Erdos758.SmallValues
 
@@ -10,12 +10,10 @@ namespace JSP000622
 
 open SimpleGraph Erdos758
 
-/-- A homogeneous vertex set, without imposing finiteness on its ambient type. -/
 def HomogeneousSet {V : Type*} (G : SimpleGraph V) (S : Set V) : Prop :=
   (∀ u ∈ S, ∀ v ∈ S, u ≠ v → G.Adj u v) ∨
   (∀ u ∈ S, ∀ v ∈ S, u ≠ v → ¬ G.Adj u v)
 
-/-- A homogeneous cover suffices: choose one covering block for each vertex. -/
 theorem colorable_of_homogeneous_cover {V : Type*} {k : ℕ}
     (G : SimpleGraph V) (blocks : Fin k → Set V)
     (cover : ∀ v, ∃ i, v ∈ blocks i)
@@ -33,30 +31,28 @@ theorem colorable_of_homogeneous_cover {V : Type*} {k : ℕ}
     intro u v hu hv huv
     apply hin u (by simpa [hu] using hc u) v (by simpa [hv] using hc v) huv
 
-/-- The packing statement needed for the twenty-vertex upper bound. -/
 def TwoFours {V : Type*} (G : SimpleGraph V) : Prop :=
   ∃ S T : Finset V, S.card = 4 ∧ T.card = 4 ∧ Disjoint S T ∧
     IsHomogeneousFinset G S ∧ IsHomogeneousFinset G T
 
-/-- A convenient extraction from the already formalized small-order table. -/
 theorem z_sixteen_eq_six : z 16 = 6 := by
   rcases small_values_exact with
     ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, h16, _, _, _⟩
   exact h16
 
-/-- The twenty-vertex lower bound follows by induced-subgraph monotonicity. -/
 theorem z_twenty_ge_six : 6 ≤ z 20 := by
   have h : z 16 ≤ z 20 := z_le
     (uniformBound_mono_vertices (by decide : 16 ≤ 20) (z_spec 20))
   simpa [z_sixteen_eq_six] using h
 
-/-- The twelve-vertex input is an imported theorem, not a replacement target. -/
+/-- The twelve-vertex result is an input, not the final target. -/
 theorem upper_twelve : UniformBound 12 4 := by
   have h12 : z 12 = 4 := by
     rcases small_values_exact with
       ⟨_, _, _, _, _, _, _, _, _, _, _, h12, _, _, _, _, _, _, _⟩
     exact h12
-  simpa [h12] using z_spec 12
+  intro G
+  simpa only [h12] using z_spec 12 G
 
 /-- Two disjoint homogeneous four-sets and the twelve-vertex theorem give six colours. -/
 theorem colorable_six_of_two_fours (G : SimpleGraph (Fin 20))
@@ -106,7 +102,7 @@ theorem colorable_six_of_two_fours (G : SimpleGraph (Fin 20))
   · intro i
     exact hP (e.symm i)
 
-/-- This records exactly, rather than hides, the remaining graph-packing obligation. -/
+/-- Exact reduction; its packing hypothesis must be discharged in the final theorem. -/
 theorem z_twenty_eq_six_of_two_fours
     (packing : ∀ G : SimpleGraph (Fin 20), TwoFours G) : z 20 = 6 :=
   Nat.le_antisymm (z_le (fun G => colorable_six_of_two_fours G (packing G)))
