@@ -1,0 +1,5 @@
+Resume iteration 1.
+Preserve the six verified classification shards from run 35172668078.
+Rebuild both core interface modules with explicit nested-list CNF types and equality transport.
+Then compile the complete catalog, finite evidence, Main theorem, exact axiom audit, and fresh kernel replay.
+No prize or proof completion is claimed merely by starting this run.
