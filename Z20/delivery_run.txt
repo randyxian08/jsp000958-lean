@@ -1,0 +1,4 @@
+Delivery iteration 1.
+Package the exact checked sources and closed theorem receipt from run 35174067645.
+Include the dependency lock and all generated finite certificate source/data files.
+Exclude compiled proof objects, credentials, unused live-workflow tooling, and unsupported award claims.
