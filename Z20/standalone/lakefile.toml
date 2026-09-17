@@ -1,0 +1,17 @@
+name = "jsp000622"
+version = "0.1.0"
+defaultTargets = ["JSP000622.Main"]
+
+[[require]]
+name = "mathlib"
+git = "https://github.com/leanprover-community/mathlib4.git"
+rev = "db584cd6d46c92f209a44c0f1c829460d327499d"
+
+[[lean_lib]]
+name = "JSP000622"
+
+[[lean_lib]]
+name = "ErdosProblems"
+
+[[lean_lib]]
+name = "Util"
