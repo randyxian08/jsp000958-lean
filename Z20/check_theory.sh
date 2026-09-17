@@ -7,8 +7,9 @@ mkdir -p theory-output .z20/project/JSP000622
 cp -a classification-data/project/JSP000622/. .z20/project/JSP000622/
 cp -a Z20/JSP000622/. .z20/project/JSP000622/
 python3 -m venv .theory-venv
-.theory-venv/bin/pip install networkx==3.4.2 python-sat==1.8.dev24
-.theory-venv/bin/python Z20/generate_bridges.py .z20/project classification-data/logs/classification-generation.json | tee theory-output/finite-bridge-generation.txt
+.theory-venv/bin/pip -q install networkx==3.4.2 python-sat==1.8.dev24
+.theory-venv/bin/python Z20/generate_bridges.py .z20/project classification-data/logs/classification-generation.json > theory-output/finite-bridge-generation.txt
+python3 Z20/finish_generated.py .z20/project > theory-output/source-layout.json
 python3 - "$root" <<'PY'
 import json, os, signal, subprocess, sys, time
 from pathlib import Path
@@ -24,8 +25,7 @@ checks=[
  ('JSP000622.NormalizeSixteen',['JSP000622.Certificate.classify_sixteen']),
  ('JSP000622.NormalizeTwenty',['JSP000622.Certificate.packing_twenty_of_evidence']),
  ('JSP000622.FiniteData',['JSP000622.FiniteData.complement_closed']),
- ('JSP000622.R34Steps.Level0Case0',['JSP000622.R34Steps.Level0Case0.classify']),
- ('JSP000622.R34Steps.Level3Case0',['JSP000622.R34Steps.Level3Case0.classify']),
+ ('JSP000622.R34Steps.Level7Case5',['JSP000622.R34Steps.Level7Case5.classify']),
 ]
 results=[]
 for module,theorems in checks:
@@ -39,7 +39,12 @@ for module,theorems in checks:
         text+='\nCHECK_TIMEOUT: no successful proof check is claimed.\n'; p.returncode=124
     name=module.replace('.','_'); (out/f'{name}.txt').write_text(text)
     result={'module':module,'returncode':p.returncode,'seconds':round(time.monotonic()-start,2)}
-    print(f'=== {module}: returncode {p.returncode} ===\n{text}',flush=True)
+    print(f'=== {module}: returncode {p.returncode} ===',flush=True)
+    if p.returncode:
+        lines=text.splitlines()
+        for i,line in enumerate(lines):
+            if line.startswith('error:') or 'unsolved goals' in line:
+                print('\n'.join(lines[i:i+22]),flush=True)
     if p.returncode==0:
         f=project/'TheoryAudit.lean'
         f.write_text(f'import {module}\n'+''.join(f'#print axioms {n}\n' for n in theorems))
@@ -53,6 +58,6 @@ for module,theorems in checks:
     (out/'results.json').write_text(json.dumps({'source_commit':os.environ['GITHUB_SHA'],'checks':results},indent=2))
 import shutil
 shutil.copytree(project/'JSP000622',out/'JSP000622',dirs_exist_ok=True)
-subprocess.run(['tar','--zstd','-cf',str(out/'theory-build.tar.zst'),'.lake/build'],cwd=project,check=True)
+subprocess.run(['tar','--zstd','-cf',str(out/'theory-local-build.tar.zst'),'.lake/build/lib/lean/JSP000622','.lake/build/ir/JSP000622'],cwd=project,check=True)
 if any(x['returncode'] or 'audit_error' in x for x in results): raise SystemExit(1)
 PY
