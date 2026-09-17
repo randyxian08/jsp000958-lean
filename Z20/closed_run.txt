@@ -1,0 +1,4 @@
+Closed-statement audit iteration 1.
+Reuses all eight verified finite shards from runs 35172668078 and 35173223882.
+This job records Main compilation and axiom auditing separately from the fresh-kernel replay in run 35173223882.
+Do not infer success, priority, eligibility, or an award from job creation.
