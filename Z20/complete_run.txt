@@ -1,0 +1,2 @@
+Iteration 1: verify all 76 classification certificates, both core packing proofs, complete catalog coverage, universal normalization, the closed z(20)=6 theorem, and a fresh kernel replay.
+No mathematical or prize success is implied by starting this run.
