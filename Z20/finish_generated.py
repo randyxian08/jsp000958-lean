@@ -36,6 +36,14 @@ def finish(project: Path) -> list[str]:
         original = p.read_text()
         text = original.replace('List.mem_cons, List.mem_singleton',
                                 'List.mem_cons, List.not_mem_nil, or_false')
+        # Sat.Fmla and Sat.Clause are semireducible definitions, not abbreviations.
+        # Keep the representation explicit so ordinary list DecidableEq applies.
+        text = text.replace('def formula : Sat.Fmla :=',
+                            'def formula : List (List Sat.Literal) :=')
+        text = text.replace('  rw [formula_eq]\n  exact refutation',
+            '  exact Eq.mp\n'
+            '    (congrArg (fun f : List (List Sat.Literal) => Sat.Fmla.proof f [])\n'
+            '      formula_eq.symm) refutation')
         match = RULES.search(text)
         if match:
             names = re.findall(r'\brules\d+\b', match.group(2))
