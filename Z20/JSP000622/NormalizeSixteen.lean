@@ -5,8 +5,7 @@ namespace JSP000622.Certificate
 
 open SimpleGraph
 
-/-- The finite inputs used by the universal sixteen-vertex classification.
-Every field is instantiated by a checked theorem in the final construction. -/
+/-- Finite inputs to the universal classification; each field must be instantiated by a proof. -/
 structure SixteenEvidence where
   small7 : List ℕ
   small8 : List ℕ
@@ -61,9 +60,8 @@ theorem classify_degree_seven (E : SixteenEvidence) (G : SimpleGraph (Fin 16))
   have rootDisjoint : ∀ a : Fin 1, ∀ b : Fin 7 ⊕ Fin 8, (0 : Fin 16) ≠ inner b := by
     intro a b
     rcases b with b | b
-    · intro he
-      have hh := rootN b
-      simpa only [inner, Sum.elim_inl, ←he, SimpleGraph.irrefl] using hh
+    · change (0 : Fin 16) ≠ near b
+      exact (rootN b).ne
     · exact (show 0 ≠ far b ∧ ¬G.Adj 0 (far b) from rootF b).1
   have pointInj : Function.Injective point :=
     sumElim_injective (fun _ : Fin 1 => (0 : Fin 16)) inner
@@ -99,8 +97,16 @@ theorem classify_degree_seven (E : SixteenEvidence) (G : SimpleGraph (Fin 16))
     · subst b
       simp
     · have hbase : Gᶜ.Adj (far a) (far b) ↔ (codeGraph 8 c8).Adj a b := isoF.symm.map_adj_iff
-      simpa only [SimpleGraph.compl_adj, farInj.ne hab, hab, true_and, not_not]
-        using not_congr hbase
+      change G.Adj (far a) (far b) ↔ a ≠ b ∧ ¬(codeGraph 8 c8).Adj a b
+      constructor
+      · intro hadj
+        refine ⟨hab, ?_⟩
+        intro hcode
+        have hcompl : far a ≠ far b ∧ ¬G.Adj (far a) (far b) := hbase.mpr hcode
+        exact hcompl.2 hadj
+      · intro hcode
+        by_contra hnot
+        exact hcode.2 (hbase.mp ⟨farInj.ne hab, hnot⟩)
   have realizes := realizes_template16 H c7 c8 hrootN hrootF hnear hfar
   have freeH : H.CliqueFree 4 ∧ H.IndepSetFree 4 := ramseyFree_comap G p.toEmbedding free
   obtain ⟨code, hcode, ⟨eH⟩⟩ := E.normalized c7 hc7 c8 hc8 H
