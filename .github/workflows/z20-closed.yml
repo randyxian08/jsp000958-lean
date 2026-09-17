@@ -1,0 +1,56 @@
+name: JSP000622 closed theorem audit
+on:
+  push:
+    branches: [work/jsp000622-z20-verification]
+    paths: ['Z20/closed_run.txt']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/cache/restore@v4
+        with:
+          path: .z20
+          key: z20-runtime433-db584cd-v2
+          fail-on-cache-miss: true
+      - uses: actions/cache/restore@v4
+        with:
+          path: .z20/project/.lake/build
+          key: z20-auxiliary433-8822f7d-verified-v1
+          fail-on-cache-miss: true
+      - name: Restore pinned auxiliary proof source
+        run: bash Z20/verify_foundation.sh prepare
+      - uses: actions/download-artifact@v4
+        with:
+          name: z20-complete-data-35172668078
+          run-id: 35172668078
+          github-token: ${{ github.token }}
+          path: complete-data
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: z20-complete-finite-[0-5]-35172668078
+          run-id: 35172668078
+          github-token: ${{ github.token }}
+          path: complete-parts
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: z20-resumed-core-*-35173223882
+          run-id: 35173223882
+          github-token: ${{ github.token }}
+          path: complete-parts
+      - name: Compile the closed statement and audit all required theorem axioms
+        run: python3 Z20/closed_stage.py build
+      - name: Preserve the exact closed-theorem receipt and source
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: z20-closed-theorem-${{ github.run_id }}
+          path: complete-output
+          retention-days: 30
