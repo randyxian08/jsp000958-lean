@@ -11,7 +11,7 @@ The formal statement lives in
 [`Randy1153/Statement.lean`](Randy1153/Statement.lean).  The executable audit
 [`StatementAudit.lean`](StatementAudit.lean) checks the named interfaces and
 proves that its maximum formulation and the public witness formulation are
-logically equivalent.  `./verify.sh` compiles that audit on every run.
+logically equivalent.  `./run.sh` compiles that audit on every run.
 
 ## Expanded proposition
 
