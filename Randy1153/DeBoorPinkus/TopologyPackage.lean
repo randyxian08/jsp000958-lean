@@ -22,8 +22,10 @@ theorem gapDifference_jacobianDeterminantCondition
     (d : ℕ) (A B : ℝ) :
     GapDifferenceJacobianDeterminantCondition d A B := by
   intro nodes
-  simpa only [gapDifferenceJacobianModel] using
-    gapHeightJacobianModel_consecutiveDifference_det_ne_zero nodes
+  change (Matrix.det (fun i j =>
+    gapHeightJacobianModel nodes i.succ j -
+      gapHeightJacobianModel nodes i.castSucc j)) ≠ 0
+  exact gapHeightJacobianModel_consecutiveDifference_det_ne_zero nodes
 
 /-- The gap-difference map is unconditionally a local homeomorphism. -/
 theorem gapDifference_localHomeomorphStatement

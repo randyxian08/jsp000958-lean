@@ -678,6 +678,7 @@ private lemma gapDifferenceScale_checkerboard {n : ℕ}
           simp only [gapRightIndex_val, gapLeftIndex_val]
           omega)))
     rw [card_filter_gt_fin g] at hsign
+    rw [show n - 1 - 1 = n - 2 by omega] at hsign
     simpa only [M, finiteRootProduct, Polynomial.eval_prod,
       Polynomial.eval_sub, Polynomial.eval_X, Polynomial.eval_C, root, y]
       using hsign
@@ -726,8 +727,10 @@ private lemma gapDifference_derivative_eval_root_checkerboard {n : ℕ}
   have hscale := gapDifferenceScale_checkerboard nodes g h hgh data
   have hcomplement :
       0 < (-1 : ℝ) ^ (n - 2 - q.val) * e := by
-    simpa only [e, root] using finiteRootComplement_checkerboard_sign
+    have h := finiteRootComplement_checkerboard_sign
       (gapDifferenceRootPoint_strictMono nodes g h hgh) q
+    rw [show n - 1 - 1 = n - 2 by omega] at h
+    simpa only [e, root] using h
   have hparity := negOnePow_two_complements_eq_add
     (m := n - 1) g q
   rw [show n - 1 - 1 = n - 2 by omega] at hparity

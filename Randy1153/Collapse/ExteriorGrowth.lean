@@ -230,7 +230,7 @@ lemma exteriorGapKind_classification (g : Fin (n - 1))
 lemma not_isExteriorGap_of_full (hfull : spec.placement = .full)
     (g : Fin (n - 1)) : ¬ spec.IsExteriorGap g := by
   have hv : spec.block.start = 0 ∧ spec.block.start + d + 2 = n := by
-    simpa [Placement.Valid, hfull] using spec.placement_valid
+    simpa [Placement.Valid, hfull, Nat.add_assoc] using spec.placement_valid
   intro hg
   rcases hg with hg | hg
   · omega
@@ -543,7 +543,7 @@ lemma leftBridgeWitness_away_exterior {g : Fin (n - 1)}
         simpa [hp] using spec.placement_valid).1
     omega
   · have hv : 0 < spec.block.start ∧ spec.block.start + d + 2 = n := by
-      simpa [Placement.Valid, hp] using spec.placement_valid
+      simpa [Placement.Valid, hp, Nat.add_assoc] using spec.placement_valid
     have hjleft : j.val < spec.block.start := by
       simp only [ConsecutiveBlock.Mem] at hjnot
       omega
@@ -552,7 +552,7 @@ lemma leftBridgeWitness_away_exterior {g : Fin (n - 1)}
       omega
     exact ne_of_gt ((spec.nodes.strictMono.monotone hjle).trans_lt hmid.1)
   · have hv : 0 < spec.block.start ∧ spec.block.start + d + 2 < n := by
-      simpa [Placement.Valid, hp] using spec.placement_valid
+      simpa [Placement.Valid, hp, Nat.add_assoc] using spec.placement_valid
     by_cases hjleft : j.val < spec.block.start
     · have hjle : j ≤ gapLeftIndex g := by
         simp only [Fin.le_iff_val_le_val, gapLeftIndex_val]
@@ -584,7 +584,7 @@ lemma rightBridgeWitness_away_exterior {g : Fin (n - 1)}
     have := g.isLt
     omega
   · have hv : spec.block.start = 0 ∧ spec.block.start + d + 2 < n := by
-      simpa [Placement.Valid, hp] using spec.placement_valid
+      simpa [Placement.Valid, hp, Nat.add_assoc] using spec.placement_valid
     have hjright : spec.block.start + d + 2 ≤ j.val := by
       simp only [ConsecutiveBlock.Mem] at hjnot
       omega
@@ -598,7 +598,7 @@ lemma rightBridgeWitness_away_exterior {g : Fin (n - 1)}
     have := g.isLt
     omega
   · have hv : 0 < spec.block.start ∧ spec.block.start + d + 2 < n := by
-      simpa [Placement.Valid, hp] using spec.placement_valid
+      simpa [Placement.Valid, hp, Nat.add_assoc] using spec.placement_valid
     by_cases hjleft : j.val < spec.block.start
     · have hjfirst : j < spec.firstIndex := by
         simp only [Fin.lt_def, spec.firstIndex_val]
@@ -748,7 +748,7 @@ theorem eventually_exists_admissible_exteriorGap_gapHeight_gt
   cases hp : spec.placement
   · exact (hnotfull hp).elim
   · have hv : spec.block.start = 0 ∧ spec.block.start + d + 2 < n := by
-      simpa [Placement.Valid, hp] using spec.placement_valid
+      simpa [Placement.Valid, hp, Nat.add_assoc] using spec.placement_valid
     obtain ⟨η₁, hη₁, hadm⟩ := spec.exists_small_admissible_of_not_right
       (by simp [hp]) hv.2
     refine ⟨min η₀ η₁, lt_min hη₀ hη₁, ?_⟩
@@ -757,7 +757,7 @@ theorem eventually_exists_admissible_exteriorGap_gapHeight_gt
     exact ⟨hδ, hgrowth δ hδpos
       (hδη.trans_le (min_le_left _ _)) hδ⟩
   · have hv : 0 < spec.block.start ∧ spec.block.start + d + 2 = n := by
-      simpa [Placement.Valid, hp] using spec.placement_valid
+      simpa [Placement.Valid, hp, Nat.add_assoc] using spec.placement_valid
     obtain ⟨η₁, hη₁, hadm⟩ := spec.exists_small_admissible_of_right hp hv.1 hv.2
     refine ⟨min η₀ η₁, lt_min hη₀ hη₁, ?_⟩
     intro δ hδpos hδη
@@ -765,7 +765,7 @@ theorem eventually_exists_admissible_exteriorGap_gapHeight_gt
     exact ⟨hδ, hgrowth δ hδpos
       (hδη.trans_le (min_le_left _ _)) hδ⟩
   · have hv : 0 < spec.block.start ∧ spec.block.start + d + 2 < n := by
-      simpa [Placement.Valid, hp] using spec.placement_valid
+      simpa [Placement.Valid, hp, Nat.add_assoc] using spec.placement_valid
     obtain ⟨η₁, hη₁, hadm⟩ := spec.exists_small_admissible_of_not_right
       (by simp [hp]) hv.2
     refine ⟨min η₀ η₁, lt_min hη₀ hη₁, ?_⟩

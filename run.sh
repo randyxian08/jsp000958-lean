@@ -38,6 +38,7 @@ run() { echo "### $*"; "$@"; }
   echo "===== [4/6] upstream audits ====="
   lake env lean AxiomAudit.lean
   lake env lean StatementAudit.lean
+  lake env leanchecker Randy1153.Main
   echo
 
   echo "===== [5/6] JSP adapters ====="
@@ -48,7 +49,7 @@ run() { echo "### $*"; "$@"; }
 
   echo "===== [6/6] placeholder / axiom scan ====="
   if grep -R -n -E --include='*.lean' \
-      '(^|[^[:alnum:]_])(sorry|admit|sorryAx)([^[:alnum:]_]|$)|^[[:space:]]*(axiom|unsafe|opaque)[[:space:]]' \
+      '(^|[^[:alnum:]_])(sorry|admit|sorryAx|native_decide|implemented_by)([^[:alnum:]_]|$)|^[[:space:]]*(axiom|unsafe|opaque)[[:space:]]' \
       Randy1153 Randy1153.lean AxiomAudit.lean StatementAudit.lean jsp936 jsp937 jsp958; then
     echo "Trust scan FAILED" >&2
     exit 1

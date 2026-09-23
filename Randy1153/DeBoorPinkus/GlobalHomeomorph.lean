@@ -48,7 +48,7 @@ theorem isCoveringMap_of_isLocalHomeomorph_of_isProperMap
     exact (hproper.isCompact_preimage isCompact_singleton).finite hdisc
   · intro e he
     obtain ⟨φ, heφ, hφ⟩ := hloc e
-    exact ⟨φ, heφ, hφ.symm⟩
+    exact ⟨φ, heφ, hφ⟩
 
 /-! ## A connected covering of a simply connected space has one sheet -/
 
@@ -62,7 +62,7 @@ give equality everywhere. -/
 theorem IsCoveringMap.isHomeomorph_of_surjective
     {E X : Type*} [TopologicalSpace E] [TopologicalSpace X]
     [PreconnectedSpace E] [Nonempty X]
-    [SimplyConnectedSpace X] [LocPathConnectedSpace X]
+    [SimplyConnectedSpace X] [LocallyPathConnectedSpace X]
     {f : E → X} (hcover : IsCoveringMap f) (hsurj : Surjective f) :
     IsHomeomorph f := by
   let x₀ : X := Classical.arbitrary X
@@ -164,7 +164,7 @@ theorem gapDifference_isHomeomorph_of_localHomeomorph_of_proper
     (endpointArrayLogRatioHomeomorph (d := d) hAB).isHomeomorph
   have hcomp := htransport.comp hchart
   simpa only [transportedGapDifference, Function.comp_assoc,
-    Homeomorph.symm_comp_self, Function.id_comp] using hcomp
+    Homeomorph.symm_comp_self, Function.comp_id, Function.id_comp] using hcomp
 
 /-- Ordinary proposition interface for the remaining local input.  No
 inhabitant is asserted here. -/

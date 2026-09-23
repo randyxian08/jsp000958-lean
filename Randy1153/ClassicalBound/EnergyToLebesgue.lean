@@ -45,7 +45,7 @@ theorem two_mul_coefficient_mul_n_div_pred_mul_log_le_lebesgueOn
         ((n - 1 : ℕ) : ℝ) *
           lebesgueOn nodes.toNodeFamily (-1) 1 := by
     apply le_of_mul_le_mul_left _ hnR
-    convert hcombined using 1 <;> ring
+    convert hcombined using 1 <;> first | rfl | ring
   rw [show 2 * C * (n : ℝ) / ((n - 1 : ℕ) : ℝ) * Real.log (n : ℝ) =
     (2 * C * (n : ℝ) * Real.log (n : ℝ)) /
       ((n - 1 : ℕ) : ℝ) by ring]

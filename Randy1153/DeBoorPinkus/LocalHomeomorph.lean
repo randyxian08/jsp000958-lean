@@ -114,8 +114,7 @@ lemma contDiffAt_localGapCriticalHeight_concrete {d : ℕ} {A B : ℝ}
     rw [localGapCriticalPoint_eq_at_base hAB u hd g data]
     exact contDiffAt_coordinateGapValueMap hAB u g
       (coordinateGapArgmax hAB u g)
-  simpa only [localGapCriticalHeight, coordinateGapValueMap,
-    Function.comp_def] using hvalue.comp u.1 hpair
+  convert hvalue.comp u.1 hpair using 1 <;> rfl
 
 /-- The canonical ambient extension used for differentiation is `C¹` at
 its base point. -/

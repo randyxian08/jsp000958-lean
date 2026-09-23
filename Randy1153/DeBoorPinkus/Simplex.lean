@@ -466,13 +466,23 @@ lemma continuous_softmaxSpacing {d : ℕ} (L : ℝ) :
   apply continuous_pi
   intro g
   refine Fin.lastCases ?_ (fun i ↦ ?_) g
-  · simpa only [softmaxSpacing_last] using
-      continuous_const.div continuous_logRatioDenominator
-        (fun z ↦ (logRatioDenominator_pos z).ne')
-  · simpa only [softmaxSpacing_castSucc] using
-      (continuous_const.mul (continuous_apply i).rexp).div
+  · have h : Continuous (((fun _ : Fin d → ℝ => L) : (Fin d → ℝ) → ℝ) / logRatioDenominator) :=
+      (continuous_const : Continuous (fun _ : Fin d → ℝ => L)).div
         continuous_logRatioDenominator
         (fun z ↦ (logRatioDenominator_pos z).ne')
+    convert h using 1
+    funext a
+    simp [softmaxSpacing_last, Pi.div_apply]
+  · have h : Continuous
+        ((((fun _ : Fin d → ℝ => L) : (Fin d → ℝ) → ℝ) *
+          fun z => Real.exp (z i)) / logRatioDenominator) :=
+      ((continuous_const : Continuous (fun _ : Fin d → ℝ => L)).mul
+        (continuous_apply i).rexp).div
+        continuous_logRatioDenominator
+        (fun z ↦ (logRatioDenominator_pos z).ne')
+    convert h using 1
+    funext a
+    simp [softmaxSpacing_castSucc, Pi.div_apply, Pi.mul_apply]
 
 lemma continuous_spacingLogRatio_positive {d : ℕ} {L : ℝ} :
     Continuous (fun s :

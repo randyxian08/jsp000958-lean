@@ -46,13 +46,17 @@ Install elan and run:
 bash run.sh
 ```
 
-The project pins Lean 4.27.0 and Mathlib v4.27.0, including the exact
+The project pins Lean 4.33.0 and Mathlib commit
+`db584cd6d46c92f209a44c0f1c829460d327499d`, including the exact
 Mathlib revision in `lake-manifest.json`. The script builds the core proof,
 checks the statement and axiom audits, compiles the JSP entry points, and
-scans the project source for proof placeholders and added axioms.
+scans the project source for proof placeholders and added axioms. It also
+replays the core final module with `leanchecker`.
 
-Local verification passed on 2026-09-16. The reported dependencies of the
+The earlier 4.27.0 verification passed on 2026-09-16. It is historical
+evidence, not a check of this upgraded snapshot. The reported dependencies of the
 final theorems are `propext`, `Classical.choice`, and `Quot.sound`.
+The upgraded snapshot has a separate [Lean 4.33.0 local verification record](evidence/lean433-local-verification.md).
 Local checks reuse dependency/build artifacts and are not represented as
 independent review. GitHub Actions provides a separate Linux reproduction;
 its actual status must be read from the workflow run.

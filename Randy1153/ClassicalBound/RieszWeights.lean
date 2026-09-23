@@ -87,7 +87,6 @@ private lemma chebyshevT_even_root_sum_neg_one (d : ℕ) :
     apply congr_arg Multiset.sum
     apply Multiset.map_congr rfl
     intro r hr
-    dsimp
     simp only [one_div]
     rw [show -1 - r = -(1 + r) by ring, inv_neg]
   rw [hmap] at hneg
@@ -114,7 +113,6 @@ private lemma chebyshevT_even_root_cosecant_sum (d : ℕ) :
       apply congr_arg Multiset.sum
       apply Multiset.map_congr rfl
       intro r hr
-      dsimp
       have hrOne : r ≠ 1 := by
         intro h
         subst r

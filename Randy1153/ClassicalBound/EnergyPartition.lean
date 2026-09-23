@@ -371,7 +371,11 @@ theorem arcsineNodeBinEmbedding_mem_interval
     (fun j ↦ arcsineBinAssignment d K q (nodes.point j) hterminal) b i
   apply mem_geometricSignedBinInterval_of_assignment hd hq hterminal
     (nodes.mem_Icc _)
-  simpa only [arcsineNodeBinEmbedding] using hfiber
+  change arcsineBinAssignment d K q
+    (nodes.point (arcsineNodeBinEmbedding q hterminal nodes b i)) hterminal = b
+  convert hfiber using 1
+  simp only [arcsineNodeBinEmbedding]
+  congr 1
 
 /-- Every node in a canonical fiber has scale at least the bin's geometric
 lower scale. -/
@@ -387,7 +391,11 @@ theorem geometricBinLowerScale_le_arcsineNodeBinScale
     (fun j ↦ arcsineBinAssignment d K q (nodes.point j) hterminal) b i
   have hx : nodes.point (arcsineNodeBinEmbedding q hterminal nodes b i) ∈
       arcsineAssignedBin d K q hterminal b := by
-    simpa only [arcsineNodeBinEmbedding] using hfiber
+    change arcsineBinAssignment d K q
+      (nodes.point (arcsineNodeBinEmbedding q hterminal nodes b i)) hterminal = b
+    convert hfiber using 1
+    simp only [arcsineNodeBinEmbedding]
+    congr 1
   exact (mem_arcsineAssignedBin_scale_bounds
     d K hq.le hterminal b hx).1
 
@@ -447,8 +455,10 @@ theorem dense_arcsineBin_divisor_lower
       hq hterminal nodes b i
   have hbound := denseBin_divisor_lower x scale hx hL hLm
     hxIcc hh hinterval (geometricBinLowerScale_pos d b.2).le hscale
-  simpa only [m, x, scale, h, arcsineBinLocalEnergy,
-    assignmentFiberLocalEnergy, arcsineNodeBinEmbedding] using hbound
+  convert hbound using 1
+  simp only [arcsineBinLocalEnergy, assignmentFiberLocalEnergy, m, x, scale, h,
+    arcsineNodeBinEmbedding]
+  congr 1
 
 lemma arcsineBinLocalEnergy_nonneg
     {d K n : ℕ} (q : ℝ)

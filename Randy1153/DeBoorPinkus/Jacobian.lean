@@ -524,13 +524,34 @@ def gapCriticalIsContDiffImplicitAt {d : ℕ} {A B : ℝ}
       (endpointArrayOfInterior hAB u) hd g
   ne_zero := by norm_num
 
+private theorem gapCriticalIFTInvertible {d : ℕ} {A B : ℝ}
+    (hAB : AdmissibleInterval A B)
+    (u : {v : Fin d → ℝ // v ∈ endpointNodeSpace d A B})
+    (hd : 1 ≤ d) (g : Fin (d + 1))
+    (data : GapCoordinateDerivativesAt hAB u g) :
+    (fderiv ℝ (coordinateCriticalMap A B g)
+      (u.1, coordinateGapArgmax hAB u g) ∘L
+      ContinuousLinearMap.inr ℝ (Fin d → ℝ) ℝ).IsInvertible := by
+  rw [data.hasFDerivAt_critical.fderiv]
+  let L := data.criticalDifferential.comp
+    (ContinuousLinearMap.inr ℝ (Fin d → ℝ) ℝ)
+  have hbij : Function.Bijective L :=
+    (gapCriticalIsContDiffImplicitAt hAB u hd g data).bijective
+  exact ⟨ContinuousLinearEquiv.ofBijective L
+      (LinearMap.ker_eq_bot.mpr hbij.1)
+      (LinearMap.range_eq_top.mpr hbij.2),
+    ContinuousLinearEquiv.coe_ofBijective L
+      (LinearMap.ker_eq_bot.mpr hbij.1)
+      (LinearMap.range_eq_top.mpr hbij.2)⟩
+
 /-- The local critical branch supplied by the implicit-function theorem. -/
 def localGapCriticalPoint {d : ℕ} {A B : ℝ}
     (hAB : AdmissibleInterval A B)
     (u : {v : Fin d → ℝ // v ∈ endpointNodeSpace d A B})
     (hd : 1 ≤ d) (g : Fin (d + 1))
     (data : GapCoordinateDerivativesAt hAB u g) : (Fin d → ℝ) → ℝ :=
-  (gapCriticalIsContDiffImplicitAt hAB u hd g data).implicitFunction
+  data.contDiffAt_critical.implicitFunction (by norm_num)
+    (gapCriticalIFTInvertible hAB u hd g data)
 
 lemma localGapCriticalPoint_eq_at_base {d : ℕ} {A B : ℝ}
     (hAB : AdmissibleInterval A B)
@@ -538,9 +559,8 @@ lemma localGapCriticalPoint_eq_at_base {d : ℕ} {A B : ℝ}
     (hd : 1 ≤ d) (g : Fin (d + 1))
     (data : GapCoordinateDerivativesAt hAB u g) :
     localGapCriticalPoint hAB u hd g data u.1 = coordinateGapArgmax hAB u g := by
-  let hIFT := gapCriticalIsContDiffImplicitAt hAB u hd g data
-  exact (hIFT.eventually_implicitFunction_apply_eq.self_of_nhds
-    (by rfl))
+  exact data.contDiffAt_critical.implicitFunction_apply_self (by norm_num)
+    (gapCriticalIFTInvertible hAB u hd g data)
 
 lemma contDiffAt_localGapCriticalPoint {d : ℕ} {A B : ℝ}
     (hAB : AdmissibleInterval A B)
@@ -548,7 +568,8 @@ lemma contDiffAt_localGapCriticalPoint {d : ℕ} {A B : ℝ}
     (hd : 1 ≤ d) (g : Fin (d + 1))
     (data : GapCoordinateDerivativesAt hAB u g) :
     ContDiffAt ℝ 1 (localGapCriticalPoint hAB u hd g data) u.1 :=
-  (gapCriticalIsContDiffImplicitAt hAB u hd g data).contDiffAt_implicitFunction
+  data.contDiffAt_critical.contDiffAt_implicitFunction (by norm_num)
+    (gapCriticalIFTInvertible hAB u hd g data)
 
 lemma eventually_coordinateCriticalMap_localGapCriticalPoint_eq_zero
     {d : ℕ} {A B : ℝ} (hAB : AdmissibleInterval A B)
@@ -559,7 +580,8 @@ lemma eventually_coordinateCriticalMap_localGapCriticalPoint_eq_zero
       coordinateCriticalMap A B g
         (v, localGapCriticalPoint hAB u hd g data v) = 0 := by
   have hevent :=
-    (gapCriticalIsContDiffImplicitAt hAB u hd g data).apply_implicitFunction
+    data.contDiffAt_critical.eventually_apply_implicitFunction (by norm_num)
+      (gapCriticalIFTInvertible hAB u hd g data)
   rw [coordinateCriticalMap_eq_zero hAB u (by omega) g] at hevent
   exact hevent
 
@@ -615,7 +637,7 @@ lemma hasFDerivAt_envelope_of_vertical_eq_zero
     rw [show (v, τ' v) = (v, 0) + (0, τ' v) by ext <;> simp]
     rw [map_add, hv, add_zero]
   rw [hmaps] at hcomp
-  simpa only [Function.comp_apply] using hcomp
+  convert hcomp using 1 <;> try rfl
 
 /-- The local critical-value branch.  Near the base point it is the genuine
 gap height once the preceding branch-identification lemma is applied. -/
@@ -872,9 +894,7 @@ lemma differentiableAt_coordinateGapValueMap {d : ℕ} {A B : ℝ}
       (coordinateLagrangePolynomial A B z.1 k).eval z.2)
     (fun k _ => (differentiableAt_const (c := gapCoefficient g k)).mul
       (differentiableAt_coordinateLagrangePolynomial_eval hAB u k x))
-  convert hsum using 1
-  funext z
-  simp
+  convert hsum using 1 <;> first | rfl | (funext z; simp)
 
 /-- The derivative with respect to the evaluation variable of one cardinal
 product, displayed as the product rule. -/
@@ -893,7 +913,7 @@ lemma hasDerivAt_coordinateLagrangeFactorValue_evaluation {d : ℕ}
   convert ((hasDerivAt_id x).sub_const
     (endpointPoint A B u i)).mul_const
       (endpointPoint A B u k - endpointPoint A B u i)⁻¹ using 1
-  all_goals ring
+  all_goals first | rfl | ring
 
 lemma coordinateLagrangeCriticalFormula_eq {d : ℕ} (A B : ℝ)
     (u : Fin d → ℝ) (k : Fin (d + 2)) (x : ℝ) :
@@ -909,9 +929,7 @@ lemma coordinateLagrangeCriticalFormula_eq {d : ℕ} (A B : ℝ)
       (fun y => ∏ i ∈ Finset.univ.erase k,
         coordinateLagrangeFactorValue A B u k i y)
       (coordinateLagrangeCriticalFormula A B u k x) x := by
-    convert hprod using 1
-    funext y
-    simp
+    convert hprod using 1 <;> first | rfl | (funext y; simp)
   have heqfun :
       (fun y => (coordinateLagrangePolynomial A B u k).eval y) =
         fun y => ∏ i ∈ Finset.univ.erase k,
@@ -1035,7 +1053,7 @@ private lemma fderiv_comp_inr_eq_of_hasDeriv {E : Type*}
   have hcurve : HasFDerivAt (fun y : ℝ => (u, y))
       (ContinuousLinearMap.inr ℝ E ℝ) x := by
     convert (hasFDerivAt_const (x := x) (c := u)).prodMk
-      (hasFDerivAt_id x) using 1
+      (hasFDerivAt_id x) using 1 <;> first | rfl | (ext; simp)
   have hcomp := hf.hasFDerivAt.comp x hcurve
   exact hcomp.unique hx
 
@@ -1120,8 +1138,9 @@ lemma hasDerivAt_endpointPoint_coordinateShift {d : ℕ} (A B : ℝ)
     · subst i
       simp only [coordinateShift_apply_self]
       convert (hasDerivAt_const (x := (0 : ℝ)) (c := u j)).add
-        (hasDerivAt_id 0) using 1
-      simp [coordinateNodeVelocity]
+        (hasDerivAt_id 0) using 1 <;>
+        first | rfl | (funext s; simp [coordinateNodeVelocity]) |
+          simp [coordinateNodeVelocity]
     · have hfun : (fun s => coordinateShift u j s i) = fun _ => u i := by
         funext s
         exact coordinateShift_apply_of_ne u hij s
@@ -1196,7 +1215,7 @@ lemma hasDerivAt_coordinateLagrangeFactor_coordinateShift {d : ℕ}
       (fun s => x - endpointPoint A B (coordinateShift u.1 j s) i)
       (-(coordinateNodeVelocity j i)) 0 := by
     convert (hasDerivAt_const (x := (0 : ℝ)) (c := x)).sub hti using 1
-    all_goals simp [coordinateNodeVelocity]
+    all_goals first | rfl | simp [coordinateNodeVelocity]
   have hden : HasDerivAt
       (fun s => endpointPoint A B (coordinateShift u.1 j s) k -
         endpointPoint A B (coordinateShift u.1 j s) i)
@@ -1204,11 +1223,13 @@ lemma hasDerivAt_coordinateLagrangeFactor_coordinateShift {d : ℕ}
     exact htk.sub hti
   have hne := endpointPoint_sub_ne_zero hAB u hki
   have hquot := hnum.div hden (by simpa using hne)
-  convert hquot using 1
-  simp only [coordinateLagrangeFactorPartialPolynomial,
-    Polynomial.eval_mul, Polynomial.eval_sub, Polynomial.eval_C,
-    Polynomial.eval_X, coordinateShift_zero]
-  field_simp [hne]
+  convert hquot using 1 <;>
+    first
+    | rfl
+    | (funext s; simp [coordinateLagrangeFactorValue])
+    | (simp only [coordinateLagrangeFactorPartialPolynomial,
+        Polynomial.eval_mul, Polynomial.eval_sub, Polynomial.eval_C,
+        Polynomial.eval_X, coordinateShift_zero]; field_simp [hne])
 
 /-- Product-rule directional derivative of a coordinate cardinal polynomial. -/
 def coordinateLagrangePartialPolynomial {d : ℕ} (A B : ℝ)
@@ -1239,11 +1260,11 @@ lemma hasDerivAt_coordinateLagrange_coordinateShift {d : ℕ}
       (coordinateLagrangeFactorPartialPolynomial A B u.1 j k i).eval x)
     (fun i hi => hasDerivAt_coordinateLagrangeFactor_coordinateShift
       hAB u j (Finset.mem_erase.mp hi).1.symm x)
-  convert hprod using 1
+  convert hprod using 1 <;> try rfl
   · funext s
     rw [coordinateLagrangePolynomial_eval_eq_prod_factor]
     simp [fac]
-  · simp only [coordinateLagrangePartialPolynomial,
+  · try simp only [coordinateLagrangePartialPolynomial,
       Polynomial.eval_finset_sum, Polynomial.eval_mul, Polynomial.eval_prod,
       fac, coordinateLagrangeFactorPolynomial_eval, smul_eq_mul,
       coordinateShift_zero]
@@ -1260,7 +1281,8 @@ private lemma hasDerivAt_finset_sum_scalar {ι : Type*} {s : Finset ι}
   | empty => simpa using hasDerivAt_const (x := x) (c := (0 : ℝ))
   | @insert a s ha ih =>
       simp only [Finset.sum_insert ha]
-      convert (hf a (by simp)).add (ih (fun i hi => hf i (by simp [hi]))) using 1
+      convert (hf a (by simp)).add (ih (fun i hi => hf i (by simp [hi]))) using 1 <;>
+        first | rfl | (funext y; simp)
 
 lemma hasDerivAt_coordinateGapValue_coordinateShift {d : ℕ}
     {A B : ℝ} (hAB : AdmissibleInterval A B)
@@ -1306,7 +1328,8 @@ private lemma fderiv_apply_inl_direction_eq_of_hasDeriv {E : Type*}
     simpa using hf.hasFDerivAt
   have hcomp := hfbase.comp 0 hcurve
   have hvalue := hcomp.unique (by
-    simpa only [Function.comp_apply] using hx)
+    convert hx.hasFDerivAt using 1 <;>
+      first | rfl | (funext s; rfl))
   have happly := congrArg (fun L : ℝ →L[ℝ] ℝ => L 1) hvalue
   simpa using happly
 
@@ -1319,7 +1342,7 @@ lemma coordinateGapValueMap_fderiv_horizontal_explicit {d : ℕ}
       (coordinateGapPartialPolynomial A B u.1 g j).eval x := by
   apply fderiv_apply_inl_direction_eq_of_hasDeriv
     (differentiableAt_coordinateGapValueMap hAB u g x)
-  · simpa only [coordinateShift] using hasFDerivAt_coordinateShift u.1 j
+  · convert hasFDerivAt_coordinateShift u.1 j using 1 <;> try rfl
   · simpa only [coordinateGapValueMap, coordinateShift] using
       hasDerivAt_coordinateGapValue_coordinateShift hAB u g j x
 
@@ -1387,8 +1410,9 @@ lemma coordinateGapPartialPolynomial_eval_node {d : ℕ} {A B : ℝ}
         (coordinateShift u.1 j s,
           endpointPoint A B (coordinateShift u.1 j s) k)) =ᶠ[𝓝 0]
       (fun _ => gapCoefficient g k) := by
-    simpa only [coordinateGapValueMap] using
+    convert
       eventually_coordinateGapValue_shift_at_node hAB u g j k
+      using 1 <;> try rfl
   have hzero : HasFDerivAt
       (fun s => coordinateGapValueMap A B g
         (coordinateShift u.1 j s,

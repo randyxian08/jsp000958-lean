@@ -177,7 +177,7 @@ def sortingPerm {n : ℕ} (nodes : NodeFamily n) : Equiv.Perm (Fin n) :=
 enumeration pointwise. -/
 lemma point_sortingPerm {n : ℕ} (nodes : NodeFamily n) (i : Fin n) :
     nodes.point (nodes.sortingPerm i) = nodes.sorted.point i := by
-  simpa only [sortingPerm, Equiv.trans_apply, coe_rangeEquiv_apply, sorted_point,
+  simpa only [sortingPerm, Equiv.trans_apply, OrderIso.coe_toEquiv, coe_rangeEquiv_apply, sorted_point,
     sortedPoint, Finset.coe_orderIsoOfFin_apply] using
     congrArg Subtype.val
       (nodes.rangeEquiv.apply_symm_apply

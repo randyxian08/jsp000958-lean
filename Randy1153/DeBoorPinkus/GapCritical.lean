@@ -309,8 +309,7 @@ private lemma reciprocal_sub_strictAnti {a b x y r : ℝ}
 private lemma hasDerivAt_reciprocal_sub (x r : ℝ) (hxr : x ≠ r) :
     HasDerivAt (fun y : ℝ => 1 / (y - r)) (-1 / (x - r) ^ 2) x := by
   have hne : x - r ≠ 0 := sub_ne_zero.mpr hxr
-  simpa only [one_div, id_eq, sub_eq_add_neg, add_comm] using
-    ((hasDerivAt_id x).sub_const r).inv hne
+  convert ((hasDerivAt_id x).sub_const r).inv hne using 1 <;> (first | rfl | funext y <;> simp [one_div, sub_eq_add_neg])
 
 private lemma hasDerivAt_rootReciprocalSum (roots : Multiset ℝ) (x : ℝ)
     (hx : ∀ r ∈ roots, x ≠ r) :

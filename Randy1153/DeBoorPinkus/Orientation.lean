@@ -1117,7 +1117,9 @@ theorem exists_increasingSegment_lift_of_homeomorphism_of_localOrientation
   · intro u i
     have hmap := L.map_eq u.2
     have hi := congrFun hmap i
-    simpa only [Function.comp_apply, gamma, realTailLine] using hi
+    change tailGapHeight (L (u : ℝ)) i =
+      (1 - (u : ℝ)) * tailGapHeight s i + (u : ℝ) * y i
+    exact hi
   · intro u v huv
     have huMem : (u : ℝ) ∈ Set.Icc 0 1 := u.2
     have hvMem : (v : ℝ) ∈ Set.Icc 0 1 := v.2
@@ -1219,7 +1221,8 @@ theorem exists_stopped_decreasingRay_of_prefix_endpoint_le
         (mul_le_of_le_one_left halpha.le v.2.2).trans halphaMem.2⟩
     have hmap := L.map_eq htime
     have hi := congrFun hmap i
-    simpa only [Function.comp_apply, decreasingTailRay, g] using hi
+    simpa only [Function.comp_apply, decreasingTailRay, g,
+      ContinuousMap.coe_mk] using hi
   · change gapDifference (L ((1 : ℝ) * alpha)) ⟨0, hd⟩ = c
     simpa only [one_mul, F] using halphaEq
 

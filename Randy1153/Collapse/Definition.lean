@@ -524,7 +524,7 @@ lemma extreme_points_fixed_of_not_full (δ : ℝ)
   cases hp : spec.placement
   · exact (hplace hp).elim
   · have hv : spec.block.start = 0 ∧ spec.block.start + d + 2 < n := by
-      simpa [Placement.Valid, hp] using spec.placement_valid
+      simpa [Placement.Valid, hp, Nat.add_assoc] using spec.placement_valid
     have hleft : spec.globalLeft = spec.firstIndex := by
       apply Fin.ext
       simp [hv.1]
@@ -535,7 +535,7 @@ lemma extreme_points_fixed_of_not_full (δ : ℝ)
       simp only [ConsecutiveBlock.Mem, spec.globalRight_val]
       omega
   · have hv : 0 < spec.block.start ∧ spec.block.start + d + 2 = n := by
-      simpa [Placement.Valid, hp] using spec.placement_valid
+      simpa [Placement.Valid, hp, Nat.add_assoc] using spec.placement_valid
     have hright : spec.globalRight = spec.lastIndex := by
       apply Fin.ext
       simp only [spec.globalRight_val, spec.lastIndex_val]
@@ -547,7 +547,7 @@ lemma extreme_points_fixed_of_not_full (δ : ℝ)
     · rw [hright]
       exact spec.last_point_fixed_of_right δ hp
   · have hv : 0 < spec.block.start ∧ spec.block.start + d + 2 < n := by
-      simpa [Placement.Valid, hp] using spec.placement_valid
+      simpa [Placement.Valid, hp, Nat.add_assoc] using spec.placement_valid
     constructor <;> apply spec.point_of_not_mem
     · simp only [ConsecutiveBlock.Mem, spec.globalLeft_val]
       omega
@@ -574,7 +574,7 @@ original endpoint distance.  It is not a small-scale family. -/
 lemma admissible_full (hfull : spec.placement = .full) :
     spec.Admissible spec.fullScale := by
   have hv : spec.block.start = 0 ∧ spec.block.start + d + 2 = n := by
-    simpa [Placement.Valid, hfull] using spec.placement_valid
+    simpa [Placement.Valid, hfull, Nat.add_assoc] using spec.placement_valid
   have hscale := spec.fullScale_pos hfull
   have hleft : spec.clusterPoint spec.fullScale spec.localLeft =
       spec.nodes.point spec.firstIndex := by
@@ -604,7 +604,7 @@ lemma extreme_points_fixed_full (hfull : spec.placement = .full) :
     spec.point spec.fullScale spec.globalLeft = spec.nodes.point spec.globalLeft ∧
       spec.point spec.fullScale spec.globalRight = spec.nodes.point spec.globalRight := by
   have hv : spec.block.start = 0 ∧ spec.block.start + d + 2 = n := by
-    simpa [Placement.Valid, hfull] using spec.placement_valid
+    simpa [Placement.Valid, hfull, Nat.add_assoc] using spec.placement_valid
   have hleft : spec.globalLeft = spec.firstIndex := by
     apply Fin.ext
     simp [hv.1]

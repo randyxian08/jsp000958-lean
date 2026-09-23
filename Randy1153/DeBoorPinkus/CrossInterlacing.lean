@@ -433,7 +433,9 @@ lemma gapSumCombination_eval_rootPoint {n : ℕ}
       simp only [gapRightIndex_val]
       split_ifs with houtside
       · rcases houtside with houtside | houtside <;> omega
-      · rfl
+      · simp [houtside]
+        intro h
+        rcases h with h | h <;> omega
 
 lemma gapSumRootPoint_mem_closedGap {n : ℕ} (nodes : OrderedNodes n)
     (g h : Fin (n - 1)) (hgh : g < h) (q : OtherGapIndex h) :
@@ -882,7 +884,7 @@ theorem not_isRoot_gapDifferenceCombination_of_mem_outerGap {n : ℕ}
   rw [roots_gapDifferenceCombination nodes g h hgh] at hxmem
   have hximage : x ∈ Finset.univ.image
       (gapDifferenceRootPoint nodes g h hgh) := by
-    simpa only [Finset.mem_coe] using hxmem
+    exact hxmem
   rcases Finset.mem_image.mp hximage with ⟨r, _hr, hrx⟩
   exact ne_gapDifferenceRootPoint_of_mem_outerGap nodes g h q hgh hq hx r hrx.symm
 

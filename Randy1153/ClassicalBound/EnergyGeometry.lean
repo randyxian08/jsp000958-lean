@@ -75,7 +75,6 @@ private lemma sum_range_step_eq_boundary (f : ℕ → ℝ) {m r : ℕ}
   rw [Finset.sum_Ico_eq_sub _ hrm]
   rw [Finset.sum_Ico_eq_sub _ (Nat.sub_le m r)]
   rw [Finset.sum_Ico_eq_sub _ (Nat.zero_le (m - r))]
-  rw [Finset.sum_Ico_eq_sub _ (Nat.zero_le r)]
   ring
 
 /-- Exact boundary form of the fixed-step overlap count.
