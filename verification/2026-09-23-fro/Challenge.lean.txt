@@ -1,0 +1,7 @@
+import Randy1153.Statement
+
+namespace IndependentChallenge
+
+theorem proof : Randy1153.Target := by sorry
+
+end IndependentChallenge

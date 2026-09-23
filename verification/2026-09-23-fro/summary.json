@@ -1,0 +1,34 @@
+{
+  "proof_commit": "d85351c2c0b9c6357741e8fa2c2a3d9747b49919",
+  "selected_theorems": [
+    "Randy1153.randy1153_main"
+  ],
+  "official_audit_script_commit": "bcf1866ea9a4ae82b32bd95b82ffd812b9ee80d2",
+  "official_audit_script_sha256": "5db45dddcb4d588bc27e7c7161fbca5cedaa3e73e1c40843d21f5a214323cd07",
+  "official_audit_status": "standard_axioms_only",
+  "semantic_verdict": "not_determined",
+  "inputs_stable": true,
+  "target_axioms": {
+    "Randy1153.randy1153_main": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ]
+  },
+  "comparator_commit": "3927ad383f208ae977c340a91c48ac9b497d2097",
+  "exporter_commit": "15f6055e299ad5b89345e533cc2192f4cc00f659",
+  "landrun_commit": "811cfff51ceaf3d9843708aa6d22e9b84ccac8b4",
+  "mathlib_commit": "db584cd6d46c92f209a44c0f1c829460d327499d",
+  "lean_toolchain": "leanprover/lean4:v4.33.0",
+  "container_image_id": "sha256:cfd9fb59d279a8be64e7624654f59e5cc15e842fd6744146dbfe9ada2582c45f",
+  "container_network_during_comparison": "disconnected",
+  "comparator_exit_code": 0,
+  "comparator_log_sha256": "c5e0e11699c729e2abacdd698a83cabaa9129eb4fa0de77ff4b93357139b59a8",
+  "external_kernel": "nanoda 0.4.19; accepted the exported solution",
+  "nanoda_commit": "3a2407216ee84a75f9e1aead6803d0578be06ae7",
+  "nanoda_binary_sha256": "566a4951761d02fb6bd76a6d8d450b8afdfc0c9796bd183e9ae70c2826dd4038",
+  "nanoda_comparator_exit_code": 0,
+  "nanoda_comparator_log_sha256": "7799359ee2505aaaacdaad5847c31265dd3e166afd46a0884a44c21639e93f53",
+  "comparator_log_gzip_sha256": "6ecce13a548da472b87edbd8a2cf982406f53b83774d2d98a8c02bc62ccd941a",
+  "nanoda_comparator_log_gzip_sha256": "bfe3472969b87ceb599f8c7237501693b83bb22eb6767ad04a9b2d6d771abe5d"
+}

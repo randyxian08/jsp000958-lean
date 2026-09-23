@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "project": {
+    "root": "/absolute/path/to/checkout",
+    "repository": "https://github.com/randyxian08/jsp000958-lean",
+    "commit": "d85351c2c0b9c6357741e8fa2c2a3d9747b49919",
+    "toolchain": "leanprover/lean4:v4.33.0"
+  },
+  "problems": [
+    {
+      "id": "JSP-000958",
+      "source": "https://www.erdosproblems.com/1153",
+      "requirements": [
+        {
+          "id": "local-log",
+          "description": "For every fixed nondegenerate subinterval of [-1,1] and every positive epsilon there is a node-uniform threshold N such that all n at least N and all n-node families have local Lebesgue value above (2/pi-epsilon) log n",
+          "targets": [
+            "core"
+          ],
+          "coverage": "pending"
+        }
+      ]
+    }
+  ],
+  "targets": [
+    {
+      "id": "core",
+      "problem": "JSP-000958",
+      "role": "theorem",
+      "module": "Randy1153.Main",
+      "source": "Randy1153/Main.lean",
+      "declaration": "Randy1153.randy1153_main"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+FROM debian:13
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      ca-certificates curl git unzip zstd xz-utils build-essential golang-go python3 \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN useradd --uid 10001 --create-home --shell /bin/bash auditor
+USER auditor
+ENV HOME=/home/auditor
+ENV PATH=/home/auditor/.elan/bin:/home/auditor/go/bin:/usr/local/bin:/usr/bin:/bin
+
+RUN curl -fsSL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh \
+    | sh -s -- -y --default-toolchain leanprover/lean4:v4.33.0
+
+WORKDIR /work

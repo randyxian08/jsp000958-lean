@@ -1,0 +1,7 @@
+import Randy1153.Main
+
+namespace IndependentChallenge
+
+theorem proof : Randy1153.Target := Randy1153.randy1153_main
+
+end IndependentChallenge
